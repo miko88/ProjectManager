@@ -28,4 +28,20 @@ public class JwtTokenServiceTests
         jwt.Issuer.Should().Be("ProjectManager");
         jwt.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == "admin");
     }
+
+    [Fact]
+    public void Constructor_WithTooShortSigningKey_ThrowsArgumentException()
+    {
+        var options = Options.Create(new AuthOptions
+        {
+            Issuer = "ProjectManager",
+            Audience = "ProjectManagerClient",
+            TokenExpiryMinutes = 30,
+            SigningKey = "short"
+        });
+
+        var act = () => new JwtTokenService(options);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

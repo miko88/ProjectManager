@@ -7,9 +7,25 @@ using ProjectManager.Application.Abstractions;
 
 namespace ProjectManager.Infrastructure.Auth;
 
-public sealed class JwtTokenService(IOptions<AuthOptions> options) : ITokenService
+public sealed class JwtTokenService : ITokenService
 {
-    private readonly AuthOptions _options = options.Value;
+    private const int MinSigningKeyBytes = 32;
+
+    private readonly AuthOptions _options;
+
+    public JwtTokenService(IOptions<AuthOptions> options)
+    {
+        _options = options.Value;
+
+        if (string.IsNullOrEmpty(_options.SigningKey) ||
+            Encoding.UTF8.GetByteCount(_options.SigningKey) < MinSigningKeyBytes)
+        {
+            throw new ArgumentException(
+                $"HS256 requires a signing key of at least {MinSigningKeyBytes} bytes (256 bits). " +
+                "Configure a longer 'SigningKey' value.",
+                nameof(options));
+        }
+    }
 
     public TokenResult CreateToken(AuthenticatedUser user)
     {

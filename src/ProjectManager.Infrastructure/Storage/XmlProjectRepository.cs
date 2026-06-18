@@ -58,7 +58,10 @@ public sealed class XmlProjectRepository : IProjectRepository
     {
         var all = await GetAllAsync(ct);
         var max = all
-            .Select(p => int.TryParse(p.Id.Replace("prj", ""), out var n) ? n : 0)
+            .Select(p => p.Id.StartsWith("prj", StringComparison.Ordinal) &&
+                         int.TryParse(p.Id.AsSpan(3), out var n)
+                ? n
+                : 0)
             .DefaultIfEmpty(0)
             .Max();
         return $"prj{max + 1}";
@@ -112,16 +115,33 @@ public sealed class XmlProjectRepository : IProjectRepository
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_path))!);
 
         var tmp = _path + ".tmp";
-        await using (var stream = File.Create(tmp))
+        try
         {
-            await doc.SaveAsync(stream, SaveOptions.None, ct);
-        }
+            await using (var stream = File.Create(tmp))
+            {
+                await doc.SaveAsync(stream, SaveOptions.None, ct);
+            }
 
-        // Atomic replace: the store is never observed half-written.
-        if (File.Exists(_path))
-            File.Replace(tmp, _path, null);
-        else
-            File.Move(tmp, _path);
+            // Atomic replace: the store is never observed half-written.
+            if (File.Exists(_path))
+                File.Replace(tmp, _path, null);
+            else
+                File.Move(tmp, _path);
+        }
+        catch
+        {
+            try
+            {
+                if (File.Exists(tmp))
+                    File.Delete(tmp);
+            }
+            catch
+            {
+                // best-effort cleanup; the original exception is what matters.
+            }
+
+            throw;
+        }
     }
 
     private static Project ToProject(XElement e) => Project.Create(
