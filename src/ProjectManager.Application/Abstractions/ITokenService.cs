@@ -1,5 +1,3 @@
-using ProjectManager.Application.Abstractions;
-
 namespace ProjectManager.Application.Abstractions;
 
 public sealed record TokenResult(string Token, DateTimeOffset ExpiresAt);

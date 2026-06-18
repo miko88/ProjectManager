@@ -37,6 +37,7 @@ public class UpdateProjectHandlerTests
         var result = await Build(repo).HandleAsync(new UpdateProjectCommand("nope", "New", "NEW", "NewC"));
 
         result.Status.Should().Be(ResultStatus.NotFound);
+        await repo.DidNotReceive().UpdateAsync(Arg.Any<ProjectManager.Domain.Project>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

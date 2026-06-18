@@ -47,6 +47,7 @@ public sealed class Result<T> : Result
     private Result(ResultStatus status, string? message, IReadOnlyDictionary<string, string[]>? errors)
         : base(status, message, errors) => Value = default;
 
+    // "static new" intentionally hides the base Result statics so Result<T>.X(...) returns the generic type; not a behavioral change.
     public static Result<T> Success(T value) => new(value);
     public static new Result<T> NotFound(string message) => new(ResultStatus.NotFound, message, null);
     public static new Result<T> Conflict(string message) => new(ResultStatus.Conflict, message, null);
