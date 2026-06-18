@@ -1,16 +1,18 @@
-﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using ProjectManager.Client.Auth
+@inject JwtAuthenticationStateProvider AuthState
+@inject NavigationManager Nav
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<main class="container">
+    <AuthorizeView>
+        <Authorized>
+            <nav><a href="/">Projekty</a> <button @onclick="Logout">Odhlásiť</button></nav>
+        </Authorized>
+    </AuthorizeView>
+    @Body
+</main>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@code {
+    private void Logout() { AuthState.Clear(); Nav.NavigateTo("/login"); }
+}

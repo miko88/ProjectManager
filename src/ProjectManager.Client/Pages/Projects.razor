@@ -1,0 +1,58 @@
+@page "/"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using ProjectManager.Client.Services
+@using ProjectManager.Contracts
+@inject ProjectApiClient Api
+
+<h1>Projekty</h1>
+<button @onclick="@(() => OpenEditor(null))">Nový projekt</button>
+
+@if (_projects is null)
+{
+    <p>Načítavam…</p>
+}
+else
+{
+    <table>
+        <thead><tr><th>Názov</th><th>Skratka</th><th>Zákazník</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var p in _projects)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.Abbreviation</td>
+                <td>@p.Customer</td>
+                <td>
+                    <button @onclick="@(() => OpenEditor(p))">Upraviť</button>
+                    <button @onclick="@(() => Delete(p.Id))">Zmazať</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@if (_editing)
+{
+    <ProjectEditor Project="_selected" OnSaved="OnSaved" OnCancel="@(() => _editing = false)" />
+}
+
+@code {
+    private List<ProjectDto>? _projects;
+    private bool _editing;
+    private ProjectDto? _selected;
+
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task Load() => _projects = await Api.GetAllAsync();
+
+    private void OpenEditor(ProjectDto? p) { _selected = p; _editing = true; }
+
+    private async Task OnSaved() { _editing = false; await Load(); }
+
+    private async Task Delete(string id)
+    {
+        var res = await Api.DeleteAsync(id);
+        if (res.IsSuccessStatusCode) await Load();
+    }
+}
