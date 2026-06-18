@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ProjectManager.Api.Common;
 using ProjectManager.Api.Endpoints;
@@ -20,14 +21,19 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
     .WriteTo.Console()
     .WriteTo.File("logs/projectmanager-.log", rollingInterval: RollingInterval.Day));
 
-var auth = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>()!;
-
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// JWT bearer options are bound from IOptions<AuthOptions> at the point the authentication
+// handler is first activated (not snapshotted from builder.Configuration at startup), so
+// config sources layered on afterwards (e.g. WebApplicationFactory's in-memory overrides
+// in tests) are honored rather than a stale pre-Build() value.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<AuthOptions>>((options, authOptions) =>
     {
+        var auth = authOptions.Value;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
