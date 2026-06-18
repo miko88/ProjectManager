@@ -1,0 +1,27 @@
+# .NET build output
+bin/
+obj/
+out/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+coverage*.json
+coverage*.xml
+
+# Secrets / local config (NEVER commit signing keys or plaintext secrets)
+secrets.json
+*.secrets.json
+appsettings.*.local.json
+
+# OS noise
+.DS_Store
+Thumbs.db
