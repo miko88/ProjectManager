@@ -7,6 +7,11 @@
 <h1>Projekty</h1>
 <button @onclick="@(() => OpenEditor(null))">Nový projekt</button>
 
+@if (_error is not null)
+{
+    <p style="color:red">@_error</p>
+}
+
 @if (_projects is null)
 {
     <p>Načítavam…</p>
@@ -41,10 +46,15 @@ else
     private List<ProjectDto>? _projects;
     private bool _editing;
     private ProjectDto? _selected;
+    private string? _error;
 
     protected override Task OnInitializedAsync() => Load();
 
-    private async Task Load() => _projects = await Api.GetAllAsync();
+    private async Task Load()
+    {
+        _projects = await Api.GetAllAsync();
+        _error = null;
+    }
 
     private void OpenEditor(ProjectDto? p) { _selected = p; _editing = true; }
 
@@ -52,7 +62,11 @@ else
 
     private async Task Delete(string id)
     {
+        _error = null;
         var res = await Api.DeleteAsync(id);
-        if (res.IsSuccessStatusCode) await Load();
+        if (res.IsSuccessStatusCode)
+            await Load();
+        else
+            _error = "Zmazanie zlyhalo.";
     }
 }
