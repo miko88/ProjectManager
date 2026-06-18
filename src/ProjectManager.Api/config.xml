@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <Storage>
+    <ProjectsFilePath>../../data/projects.xml</ProjectsFilePath>
+  </Storage>
+  <Auth>
+    <Username>admin</Username>
+    <!-- PasswordHash is generated in Task 3.4 Step 1 and pasted here -->
+    <PasswordHash>REPLACE_IN_TASK_3.4</PasswordHash>
+    <Issuer>ProjectManager</Issuer>
+    <Audience>ProjectManagerClient</Audience>
+    <TokenExpiryMinutes>60</TokenExpiryMinutes>
+    <!-- SigningKey is a SECRET: provided via user-secrets / env, NOT here -->
+  </Auth>
+</configuration>

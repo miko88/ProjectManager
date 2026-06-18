@@ -21,4 +21,8 @@
     <ProjectReference Include="..\ProjectManager.Contracts\ProjectManager.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config.xml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
