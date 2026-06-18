@@ -2059,6 +2059,7 @@ git add -A && git commit -m "feat(api): endpoints, JWT auth, CORS, Serilog, glob
 
 ```csharp
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 
@@ -2066,6 +2067,11 @@ namespace ProjectManager.Api.Tests;
 
 public sealed class CustomWebAppFactory : WebApplicationFactory<Program>
 {
+    // Test-only fixture credential. Defined once; the hash is computed at runtime so
+    // there is no pasted magic value and no plaintext-in-comment to drift out of sync.
+    public const string TestUser = "admin";
+    public const string TestPassword = "Admin123!";
+
     public string DataFile { get; } = Path.Combine(Path.GetTempPath(), $"pm-api-{Guid.NewGuid():N}.xml");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -2077,15 +2083,16 @@ public sealed class CustomWebAppFactory : WebApplicationFactory<Program>
             </projects>
             """);
 
+        var passwordHash = new PasswordHasher<string>().HashPassword(TestUser, TestPassword);
+
         builder.ConfigureAppConfiguration((_, cfg) =>
         {
             cfg.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Storage:ProjectsFilePath"] = DataFile,
                 ["Auth:SigningKey"] = "integration-test-signing-key-min-32-characters-1234",
-                ["Auth:Username"] = "admin",
-                // hash of "Admin123!" for user "admin" — regenerate if password changes
-                ["Auth:PasswordHash"] = "<PASTE_SAME_HASH_AS_CONFIG_XML>"
+                ["Auth:Username"] = TestUser,
+                ["Auth:PasswordHash"] = passwordHash
             });
         });
     }
@@ -2098,7 +2105,7 @@ public sealed class CustomWebAppFactory : WebApplicationFactory<Program>
 }
 ```
 
-> The hash must be the same value generated in Task 3.4 (it verifies `Admin123!`). Paste it here.
+> The hash is computed in-fixture from `TestPassword`, so the integration suite is self-contained — no value pasted from Task 3.4, nothing to keep in sync. The login tests reference `CustomWebAppFactory.TestPassword` instead of a literal.
 
 - [ ] **Step 2: Write the integration tests**
 
@@ -2117,7 +2124,8 @@ public class ProjectsApiTests(CustomWebAppFactory factory) : IClassFixture<Custo
     private async Task<HttpClient> AuthedClientAsync()
     {
         var client = factory.CreateClient();
-        var login = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin", "Admin123!"));
+        var login = await client.PostAsJsonAsync("/auth/login",
+            new LoginRequest(CustomWebAppFactory.TestUser, CustomWebAppFactory.TestPassword));
         login.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await login.Content.ReadFromJsonAsync<LoginResponse>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.Token);
@@ -2136,7 +2144,7 @@ public class ProjectsApiTests(CustomWebAppFactory factory) : IClassFixture<Custo
     public async Task Login_WithBadPassword_Returns401()
     {
         var client = factory.CreateClient();
-        var res = await client.PostAsJsonAsync("/auth/login", new LoginRequest("admin", "wrong"));
+        var res = await client.PostAsJsonAsync("/auth/login", new LoginRequest(CustomWebAppFactory.TestUser, "wrong"));
         res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
