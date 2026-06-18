@@ -17,12 +17,17 @@ public static class ProjectsEndpoints
         group.MapGet("/", async (ListProjectsHandler handler, CancellationToken ct) =>
         {
             var result = await handler.HandleAsync(ct);
-            return Results.Ok(result.Value!.Select(ToDto));
+            return result.IsSuccess ? Results.Ok(result.Value!.Select(ToDto)) : result.ToProblem();
         });
 
         group.MapGet("/{id}", async (string id, ListProjectsHandler handler, CancellationToken ct) =>
         {
             var result = await handler.HandleAsync(ct);
+            if (!result.IsSuccess)
+            {
+                return result.ToProblem();
+            }
+
             var project = result.Value!.FirstOrDefault(p => p.Id == id);
             return project is null
                 ? Results.Problem($"Project '{id}' was not found.", statusCode: StatusCodes.Status404NotFound)
