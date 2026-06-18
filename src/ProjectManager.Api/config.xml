@@ -6,7 +6,7 @@
   <Auth>
     <Username>admin</Username>
     <!-- PasswordHash is generated in Task 3.4 Step 1 and pasted here -->
-    <PasswordHash>REPLACE_IN_TASK_3.4</PasswordHash>
+    <PasswordHash>AQAAAAEAACcQAAAAEHqF3t0larDMtE3yYfQ0Ec+uGq0KkZ4CqBft8gN4V1/4Re2YKJnnq30g5Iq0A4oBaw==</PasswordHash>
     <Issuer>ProjectManager</Issuer>
     <Audience>ProjectManagerClient</Audience>
     <TokenExpiryMinutes>60</TokenExpiryMinutes>
