@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ProjectManager.Api/ProjectManager.Api.csproj" />
+    <Project Path="src/ProjectManager.Application/ProjectManager.Application.csproj" />
+    <Project Path="src/ProjectManager.Client/ProjectManager.Client.csproj" />
+    <Project Path="src/ProjectManager.Contracts/ProjectManager.Contracts.csproj" />
+    <Project Path="src/ProjectManager.Domain/ProjectManager.Domain.csproj" />
+    <Project Path="src/ProjectManager.Infrastructure/ProjectManager.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProjectManager.Api.Tests/ProjectManager.Api.Tests.csproj" />
+    <Project Path="tests/ProjectManager.Application.Tests/ProjectManager.Application.Tests.csproj" />
+    <Project Path="tests/ProjectManager.Domain.Tests/ProjectManager.Domain.Tests.csproj" />
+    <Project Path="tests/ProjectManager.Infrastructure.Tests/ProjectManager.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
