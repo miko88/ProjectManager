@@ -22,13 +22,13 @@ Jednoduchá aplikácia na správu projektov firmy: prihlásenie, zoznam projekto
 
 ## Vývojové prostredie
 
-Riešenie je vyvíjané v **C# / .NET 10 SDK** a nie je viazané na jedno IDE — funguje s **Visual Studio 2022+**, **JetBrains Rider** aj **VS Code** (C# Dev Kit). Dôvody voľby:
+Reálne bolo riešenie vyvíjané vo **Visual Studio Code** s asistenciou **Claude CLI (Claude Code)** — agentického nástroja v termináli, ktorý generoval a upravoval kód, spúšťal `dotnet build`/`test` aj `docker compose` a viedol TDD cyklus. Dôvody tejto voľby:
 
-- **.NET 10 (LTS-trieda)** — moderný, dlhodobo podporovaný runtime; jeden jazyk (C#) pre backend aj frontend (Blazor), takže zdieľame DTO (`Contracts`) a typovú bezpečnosť cez celý stack.
-- **CLI-first** — celý build/test/run beží cez `dotnet` (`dotnet build`/`test`/`run`, `docker compose`), takže projekt je reprodukovateľný bez konkrétneho IDE a ľahko zapojiteľný do CI.
-- **Odporúčané IDE: Visual Studio 2022 / Rider** kvôli pohodlnej práci s viacprojektovým solution, debuggingu Blazor WASM a integrácii user-secrets; VS Code je plnohodnotná odľahčená alternatíva.
+- **VS Code** — odľahčené, multiplatformové editorové prostredie; s rozšírením C# Dev Kit plne pokryje .NET 10 solution (build, debug, testy) a dobre sa kombinuje s prácou v termináli.
+- **Claude CLI (Claude Code)** — terminál-centrický agentický workflow (čítanie/úpravy/spúšťanie priamo v repozitári), TDD a priebežné code-review; keďže build/test/run beží cez `dotnet` a `docker`, nič nie je viazané na konkrétne IDE.
+- **C# / .NET 10 (LTS-trieda)** — jeden jazyk pre backend aj frontend (Blazor), zdieľané DTO (`Contracts`) a typová bezpečnosť cez celý stack.
 
-Odôvodnenie výberu knižníc a frameworkov je v [design dokumente](docs/2026-06-18-sprava-projektov-design.md) (§12).
+Projekt nie je viazaný na jedno IDE — rovnako sa otvorí a spustí aj vo **Visual Studio 2022+** alebo **JetBrains Rider**. Odôvodnenie výberu knižníc a frameworkov je v [design dokumente](docs/2026-06-18-sprava-projektov-design.md) (§12).
 
 ## Prihlasovacie údaje (demo)
 

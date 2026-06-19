@@ -15,14 +15,16 @@ public sealed class LoginHandler(
     {
         var validation = await validator.ValidateAsync(command, ct);
         if (!validation.IsValid)
+        {
             return Result<TokenResult>.Invalid(validation.ToErrorDictionary());
+        }
 
         var auth = await authenticator.AuthenticateAsync(command.Username, command.Password, ct);
         if (!auth.IsSuccess)
         {
             // Username only — never the password — so failed-login auditing stays safe.
             logger.LogWarning("Failed login attempt for user {User}", command.Username);
-            return Result<TokenResult>.Unauthorized("Invalid username or password.");
+            return Result<TokenResult>.Unauthorized(ResultMessages.InvalidCredentials);
         }
 
         var token = tokenService.CreateToken(auth.Value!);

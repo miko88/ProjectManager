@@ -11,7 +11,10 @@ public sealed class ProjectApiClient(HttpClient http)
     {
         using var response = await http.GetAsync("/api/projects");
         if (!response.IsSuccessStatusCode)
+        {
             return null;
+        }
+
         return await response.Content.ReadFromJsonAsync<List<ProjectDto>>() ?? new();
     }
 

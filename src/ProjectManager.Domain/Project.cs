@@ -44,6 +44,8 @@ public sealed class Project
     private static void Require(string? value, string field)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             throw new ArgumentException($"'{field}' must not be empty.", field);
+        }
     }
 }

@@ -12,7 +12,9 @@ public sealed class DeleteProjectHandler(
     {
         var project = await repository.GetByIdAsync(id, ct);
         if (project is null)
-            return Result.NotFound($"Project '{id}' was not found.");
+        {
+            return Result.NotFound(ResultMessages.ProjectNotFound(id));
+        }
 
         await repository.DeleteAsync(id, ct);
 

@@ -23,7 +23,9 @@ public sealed class JwtAuthenticationStateProvider(TokenStore store) : Authentic
     private AuthenticationState BuildState()
     {
         if (string.IsNullOrEmpty(store.Token))
+        {
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(store.Token);
         var identity = new ClaimsIdentity(jwt.Claims, authenticationType: "jwt");

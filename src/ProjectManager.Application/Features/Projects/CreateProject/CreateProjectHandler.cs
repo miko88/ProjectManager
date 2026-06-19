@@ -15,11 +15,15 @@ public sealed class CreateProjectHandler(
     {
         var validation = await validator.ValidateAsync(command, ct);
         if (!validation.IsValid)
+        {
             return Result<Project>.Invalid(validation.ToErrorDictionary());
+        }
 
         var existing = await repository.GetAllAsync(ct);
         if (existing.Any(p => string.Equals(p.Abbreviation, command.Abbreviation.Trim(), StringComparison.OrdinalIgnoreCase)))
-            return Result<Project>.Conflict($"A project with abbreviation '{command.Abbreviation}' already exists.");
+        {
+            return Result<Project>.Conflict(ResultMessages.DuplicateAbbreviation(command.Abbreviation));
+        }
 
         // Id generation + persistence happen atomically inside the repository's write lock,
         // so concurrent creates can never collide on an id.

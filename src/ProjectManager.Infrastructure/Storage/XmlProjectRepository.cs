@@ -87,7 +87,11 @@ public sealed class XmlProjectRepository : IProjectRepository
         MutateAsync(list =>
         {
             var idx = list.FindIndex(p => p.Id == project.Id);
-            if (idx < 0) throw new InvalidOperationException($"Project '{project.Id}' not found.");
+            if (idx < 0)
+            {
+                throw new InvalidOperationException($"Project '{project.Id}' not found.");
+            }
+
             list[idx] = project;
         }, ct);
 
@@ -132,16 +136,22 @@ public sealed class XmlProjectRepository : IProjectRepository
 
             // Atomic replace: the store is never observed half-written.
             if (File.Exists(_path))
+            {
                 File.Replace(tmp, _path, null);
+            }
             else
+            {
                 File.Move(tmp, _path);
+            }
         }
         catch
         {
             try
             {
                 if (File.Exists(tmp))
+                {
                     File.Delete(tmp);
+                }
             }
             catch
             {
