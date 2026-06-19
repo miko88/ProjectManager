@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ProjectManager.Application.Features.Auth.Login;
 using ProjectManager.Application.Features.Projects.CreateProject;
 using ProjectManager.Application.Features.Projects.DeleteProject;
+using ProjectManager.Application.Features.Projects.GetProject;
 using ProjectManager.Application.Features.Projects.ListProjects;
 using ProjectManager.Application.Features.Projects.UpdateProject;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssemblyContaining<CreateProjectValidator>();
 
         services.AddScoped<ListProjectsHandler>();
+        services.AddScoped<GetProjectHandler>();
         services.AddScoped<CreateProjectHandler>();
         services.AddScoped<UpdateProjectHandler>();
         services.AddScoped<DeleteProjectHandler>();

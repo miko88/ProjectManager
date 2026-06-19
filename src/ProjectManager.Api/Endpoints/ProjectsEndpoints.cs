@@ -1,6 +1,7 @@
 using ProjectManager.Api.Common;
 using ProjectManager.Application.Features.Projects.CreateProject;
 using ProjectManager.Application.Features.Projects.DeleteProject;
+using ProjectManager.Application.Features.Projects.GetProject;
 using ProjectManager.Application.Features.Projects.ListProjects;
 using ProjectManager.Application.Features.Projects.UpdateProject;
 using ProjectManager.Contracts;
@@ -20,18 +21,10 @@ public static class ProjectsEndpoints
             return result.IsSuccess ? Results.Ok(result.Value!.Select(ToDto)) : result.ToProblem();
         });
 
-        group.MapGet("/{id}", async (string id, ListProjectsHandler handler, CancellationToken ct) =>
+        group.MapGet("/{id}", async (string id, GetProjectHandler handler, CancellationToken ct) =>
         {
-            var result = await handler.HandleAsync(ct);
-            if (!result.IsSuccess)
-            {
-                return result.ToProblem();
-            }
-
-            var project = result.Value!.FirstOrDefault(p => p.Id == id);
-            return project is null
-                ? Results.Problem($"Project '{id}' was not found.", statusCode: StatusCodes.Status404NotFound)
-                : Results.Ok(ToDto(project));
+            var result = await handler.HandleAsync(id, ct);
+            return result.IsSuccess ? Results.Ok(ToDto(result.Value!)) : result.ToProblem();
         });
 
         group.MapPost("/", async (CreateProjectRequest req, CreateProjectHandler handler, CancellationToken ct) =>
