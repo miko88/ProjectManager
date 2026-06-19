@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
@@ -11,7 +12,7 @@ namespace ProjectManager.Application.Tests.Features.Projects;
 public class UpdateProjectHandlerTests
 {
     private static UpdateProjectHandler Build(IProjectRepository repo) =>
-        new(repo, new UpdateProjectValidator());
+        new(repo, new UpdateProjectValidator(), NullLogger<UpdateProjectHandler>.Instance);
 
     [Fact]
     public async Task ExistingProject_IsUpdatedAndPersisted()

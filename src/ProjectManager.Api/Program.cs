@@ -24,6 +24,10 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Validate storage + auth configuration at startup (fail fast) rather than on first request.
+builder.Services.AddOptions<ProjectManager.Infrastructure.Storage.StorageOptions>().ValidateOnStart();
+builder.Services.AddOptions<AuthOptions>().ValidateOnStart();
+
 // JWT bearer options are bound from IOptions<AuthOptions> at the point the authentication
 // handler is first activated (not snapshotted from builder.Configuration at startup), so
 // config sources layered on afterwards (e.g. WebApplicationFactory's in-memory overrides

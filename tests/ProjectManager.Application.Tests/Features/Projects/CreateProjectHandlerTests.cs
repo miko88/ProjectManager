@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
@@ -11,20 +12,22 @@ namespace ProjectManager.Application.Tests.Features.Projects;
 public class CreateProjectHandlerTests
 {
     private static CreateProjectHandler Build(IProjectRepository repo) =>
-        new(repo, new CreateProjectValidator());
+        new(repo, new CreateProjectValidator(), NullLogger<CreateProjectHandler>.Instance);
 
     [Fact]
     public async Task ValidCommand_AddsProjectWithGeneratedId()
     {
         var repo = Substitute.For<IProjectRepository>();
         repo.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Project>());
-        repo.NextIdAsync(Arg.Any<CancellationToken>()).Returns("prj6");
+        // The repository assigns the id atomically; emulate it by invoking the factory with "prj6".
+        repo.AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.Arg<Func<string, Project>>().Invoke("prj6"));
 
         var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be("prj6");
-        await repo.Received(1).AddAsync(Arg.Is<Project>(p => p.Id == "prj6"), Arg.Any<CancellationToken>());
+        await repo.Received(1).AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -36,7 +39,7 @@ public class CreateProjectHandlerTests
 
         result.Status.Should().Be(ResultStatus.Invalid);
         result.ValidationErrors.Should().ContainKey(nameof(CreateProjectCommand.Name));
-        await repo.DidNotReceive().AddAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -49,5 +52,6 @@ public class CreateProjectHandlerTests
         var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
 
         result.Status.Should().Be(ResultStatus.Conflict);
+        await repo.DidNotReceive().AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
     }
 }

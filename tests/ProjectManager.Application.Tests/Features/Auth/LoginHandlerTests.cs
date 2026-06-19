@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
@@ -10,7 +11,7 @@ namespace ProjectManager.Application.Tests.Features.Auth;
 public class LoginHandlerTests
 {
     private static LoginHandler Build(IUserAuthenticator auth, ITokenService tokens) =>
-        new(auth, tokens, new LoginValidator());
+        new(auth, tokens, new LoginValidator(), NullLogger<LoginHandler>.Instance);
 
     [Fact]
     public async Task ValidCredentials_ReturnsToken()

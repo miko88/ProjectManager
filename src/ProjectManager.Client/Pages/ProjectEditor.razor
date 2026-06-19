@@ -1,4 +1,6 @@
 @using System.ComponentModel.DataAnnotations
+@using System.Net.Http.Json
+@using ProjectManager.Client.Resources
 @using ProjectManager.Client.Services
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
@@ -56,30 +58,75 @@
     private async Task Save()
     {
         _error = null;
-        var res = IsEdit
-            ? await Api.UpdateAsync(Project!.Id, new UpdateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer))
-            : await Api.CreateAsync(new CreateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer));
+        try
+        {
+            var res = IsEdit
+                ? await Api.UpdateAsync(Project!.Id, new UpdateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer))
+                : await Api.CreateAsync(new CreateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer));
 
-        if (res.IsSuccessStatusCode) { await OnSaved.InvokeAsync(); return; }
-        _error = res.StatusCode == System.Net.HttpStatusCode.Conflict
-            ? "Projekt s touto skratkou už existuje."
-            : "Uloženie zlyhalo. Skontrolujte vstupy.";
+            if (res.IsSuccessStatusCode)
+            {
+                await OnSaved.InvokeAsync();
+                return;
+            }
+
+            _error = await DescribeErrorAsync(res);
+        }
+        catch
+        {
+            _error = AppMessages.ServerUnavailable;
+        }
     }
 
-    // Mirrors the server-side FluentValidation rules (CreateProjectValidator/UpdateProjectValidator)
-    // so invalid input is caught before a round-trip; the API stays the source of truth.
+    // Turns a non-success response into a human message: a friendly text for a known conflict,
+    // otherwise the server's RFC 7807 ProblemDetails (validation errors / detail / title).
+    private static async Task<string> DescribeErrorAsync(HttpResponseMessage res)
+    {
+        if (res.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            return AppMessages.DuplicateAbbreviation;
+        }
+
+        try
+        {
+            var problem = await res.Content.ReadFromJsonAsync<ProblemResponse>();
+            if (problem?.Errors is { Count: > 0 })
+            {
+                return string.Join(" ", problem.Errors.SelectMany(e => e.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(problem?.Detail))
+            {
+                return problem!.Detail!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(problem?.Title))
+            {
+                return problem!.Title!;
+            }
+        }
+        catch
+        {
+            // Response body was not problem+json; fall back to a generic message.
+        }
+
+        return AppMessages.SaveFailed;
+    }
+
+    private sealed record ProblemResponse(string? Title, string? Detail, Dictionary<string, string[]>? Errors);
+
     private sealed class Model
     {
-        [Required(ErrorMessage = "Názov je povinný.")]
-        [StringLength(200, ErrorMessage = "Názov môže mať najviac 200 znakov.")]
+        [Required(ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.NameRequired))]
+        [StringLength(200, ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.NameTooLong))]
         public string Name { get; set; } = "";
 
-        [Required(ErrorMessage = "Skratka je povinná.")]
-        [StringLength(50, ErrorMessage = "Skratka môže mať najviac 50 znakov.")]
+        [Required(ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.AbbreviationRequired))]
+        [StringLength(50, ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.AbbreviationTooLong))]
         public string Abbreviation { get; set; } = "";
 
-        [Required(ErrorMessage = "Zákazník je povinný.")]
-        [StringLength(200, ErrorMessage = "Zákazník môže mať najviac 200 znakov.")]
+        [Required(ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.CustomerRequired))]
+        [StringLength(200, ErrorMessageResourceType = typeof(AppMessages), ErrorMessageResourceName = nameof(AppMessages.CustomerTooLong))]
         public string Customer { get; set; } = "";
     }
 }

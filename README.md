@@ -20,6 +20,16 @@ Jednoduchá aplikácia na správu projektov firmy: prihlásenie, zoznam projekto
 - **.NET 10 SDK** (10.0.2xx alebo novší)
 - Voliteľne **Docker** (Docker Desktop / Engine 28+) pre beh cez kontajnery
 
+## Vývojové prostredie
+
+Reálne bolo riešenie vyvíjané vo **Visual Studio Code** s asistenciou **Claude CLI (Claude Code)** — agentického nástroja v termináli, ktorý generoval a upravoval kód, spúšťal `dotnet build`/`test` aj `docker compose` a viedol TDD cyklus. Dôvody tejto voľby:
+
+- **VS Code** — odľahčené, multiplatformové editorové prostredie; s rozšírením C# Dev Kit plne pokryje .NET 10 solution (build, debug, testy) a dobre sa kombinuje s prácou v termináli.
+- **Claude CLI (Claude Code)** — terminál-centrický agentický workflow (čítanie/úpravy/spúšťanie priamo v repozitári), TDD a priebežné code-review; keďže build/test/run beží cez `dotnet` a `docker`, nič nie je viazané na konkrétne IDE.
+- **C# / .NET 10 (LTS-trieda)** — jeden jazyk pre backend aj frontend (Blazor), zdieľané DTO (`Contracts`) a typová bezpečnosť cez celý stack.
+
+Projekt nie je viazaný na jedno IDE — rovnako sa otvorí a spustí aj vo **Visual Studio 2022+** alebo **JetBrains Rider**. Odôvodnenie výberu knižníc a frameworkov je v [design dokumente](docs/2026-06-18-sprava-projektov-design.md) (§12).
+
 ## Prihlasovacie údaje (demo)
 
 ```
@@ -27,7 +37,7 @@ používateľ: admin
 heslo:      Admin123!
 ```
 
-Toto je zdokumentovaný demo účet potrebný na spustenie. V `config.xml` je uložený len **PBKDF2 hash** hesla (nie plaintext). Podpisový kľúč JWT (`Auth:SigningKey`) je **secret** a nikdy nie je v repozitári — lokálne sa berie z user-secrets, v kontajneri z premennej prostredia.
+Toto je zdokumentovaný demo účet potrebný na spustenie. V `config.xml` je uložený len **PBKDF2 hash** hesla (nie plaintext). Podpisový kľúč JWT (`Auth:SigningKey`) je **secret**: pre lokálny beh sa berie z user-secrets a v repozitári nie je. Kvôli jednoduchému vyskúšaniu obsahuje `deploy/docker-compose.yml` **throwaway demo kľúč** — v reálnom nasadení ho nahraď vlastným (env premenná / secret manager) a demo hodnotu nikdy nepoužívaj v produkcii.
 
 ## Konfigurácia
 

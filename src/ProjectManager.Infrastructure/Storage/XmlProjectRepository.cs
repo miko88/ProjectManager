@@ -54,10 +54,26 @@ public sealed class XmlProjectRepository : IProjectRepository
         return all.FirstOrDefault(p => p.Id == id);
     }
 
-    public async Task<string> NextIdAsync(CancellationToken ct = default)
+    public async Task<Project> AddAsync(Func<string, Project> create, CancellationToken ct = default)
     {
-        var all = await GetAllAsync(ct);
-        var max = all
+        await _writeLock.WaitAsync(ct);
+        try
+        {
+            var list = (await GetAllAsync(ct)).ToList();
+            var project = create(NextId(list));   // id reserved + entity built under the lock
+            list.Add(project);
+            await SaveAtomicAsync(list, ct);
+            return project;
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    private static string NextId(IReadOnlyList<Project> projects)
+    {
+        var max = projects
             .Select(p => p.Id.StartsWith("prj", StringComparison.Ordinal) &&
                          int.TryParse(p.Id.AsSpan(3), out var n)
                 ? n
@@ -67,19 +83,15 @@ public sealed class XmlProjectRepository : IProjectRepository
         return $"prj{max + 1}";
     }
 
-    public Task AddAsync(Project project, CancellationToken ct = default) =>
-        MutateAsync(list =>
-        {
-            if (list.Any(p => p.Id == project.Id))
-                throw new InvalidOperationException($"Project '{project.Id}' already exists.");
-            list.Add(project);
-        }, ct);
-
     public Task UpdateAsync(Project project, CancellationToken ct = default) =>
         MutateAsync(list =>
         {
             var idx = list.FindIndex(p => p.Id == project.Id);
-            if (idx < 0) throw new InvalidOperationException($"Project '{project.Id}' not found.");
+            if (idx < 0)
+            {
+                throw new InvalidOperationException($"Project '{project.Id}' not found.");
+            }
+
             list[idx] = project;
         }, ct);
 
@@ -124,16 +136,22 @@ public sealed class XmlProjectRepository : IProjectRepository
 
             // Atomic replace: the store is never observed half-written.
             if (File.Exists(_path))
+            {
                 File.Replace(tmp, _path, null);
+            }
             else
+            {
                 File.Move(tmp, _path);
+            }
         }
         catch
         {
             try
             {
                 if (File.Exists(tmp))
+                {
                     File.Delete(tmp);
+                }
             }
             catch
             {

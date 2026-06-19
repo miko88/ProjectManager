@@ -18,11 +18,15 @@ public sealed class ConfigUserAuthenticator(IOptions<AuthOptions> options) : IUs
     public Task<Result<AuthenticatedUser>> AuthenticateAsync(string username, string password, CancellationToken ct = default)
     {
         if (!string.Equals(username, _options.Username, StringComparison.Ordinal))
+        {
             return Task.FromResult(Result<AuthenticatedUser>.Unauthorized("Invalid credentials."));
+        }
 
         var verify = _hasher.VerifyHashedPassword(username, _options.PasswordHash, password);
         if (verify == PasswordVerificationResult.Failed)
+        {
             return Task.FromResult(Result<AuthenticatedUser>.Unauthorized("Invalid credentials."));
+        }
 
         return Task.FromResult(Result<AuthenticatedUser>.Success(new AuthenticatedUser(username)));
     }

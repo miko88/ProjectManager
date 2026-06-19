@@ -1,5 +1,6 @@
 @page "/"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using ProjectManager.Client.Resources
 @using ProjectManager.Client.Services
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
@@ -86,7 +87,7 @@ else
             var projects = await Api.GetAllAsync();
             if (projects is null)
             {
-                _error = "Projekty sa nepodarilo načítať (neautorizované alebo chyba servera).";
+                _error = AppMessages.ProjectsLoadFailed;
                 _projects = new();
             }
             else
@@ -96,7 +97,7 @@ else
         }
         catch
         {
-            _error = "Nepodarilo sa spojiť so serverom.";
+            _error = AppMessages.ServerUnavailable;
             _projects = new();
         }
     }
@@ -108,16 +109,29 @@ else
     private async Task Delete(ProjectDto project)
     {
         var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", $"Naozaj zmazať projekt „{project.Name}\"?");
+            "confirm", string.Format(AppMessages.DeleteConfirm, project.Name));
         if (!confirmed)
+        {
             return;
+        }
 
         _error = null;
-        var res = await Api.DeleteAsync(project.Id);
-        if (res.IsSuccessStatusCode)
-            await Load();
-        else
-            _error = "Zmazanie zlyhalo.";
+        try
+        {
+            var res = await Api.DeleteAsync(project.Id);
+            if (res.IsSuccessStatusCode)
+            {
+                await Load();
+            }
+            else
+            {
+                _error = AppMessages.DeleteFailed;
+            }
+        }
+        catch
+        {
+            _error = AppMessages.ServerUnavailable;
+        }
     }
 
     private static string Plural(int n) => n == 1 ? "záznam" : (n >= 2 && n <= 4 ? "záznamy" : "záznamov");
