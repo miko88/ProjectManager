@@ -378,7 +378,50 @@ input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px 
 
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Načítavam"); }
 
-@media (max-width: 560px) {
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
     .hide-sm { display: none; }
-    .page-head { align-items: flex-start; }
+
+    .app-header { padding: .8rem 1rem; }
+    .brand { font-size: 1.02rem; }
+    .brand small { display: none; }
+
+    main.page-wrap { padding: 1.6rem 1rem 3.5rem; }
+
+    .page-head { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .page-head .btn { width: 100%; justify-content: center; }
+
+    /* Table collapses into stacked label:value cards */
+    .data-table thead { display: none; }
+    .data-table, .data-table tbody { display: block; width: 100%; }
+
+    .data-table tr {
+        display: block;
+        padding: .9rem 1.05rem;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: transparent; }
+
+    .data-table td {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: .32rem 0; border: none; width: auto;
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        font-family: var(--font-mono);
+        font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+        color: var(--ink-faint);
+    }
+
+    .data-table td.td-actions { padding-top: .7rem; }
+    .data-table td.td-actions::before { display: none; }
+
+    .row-actions { opacity: 1; width: 100%; gap: .5rem; }
+    .row-actions .btn { flex: 1; justify-content: center; }
+
+    .modal { padding: 1.4rem; }
+    .modal-actions .btn { flex: 1; justify-content: center; }
 }

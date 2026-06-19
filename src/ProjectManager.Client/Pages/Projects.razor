@@ -48,9 +48,9 @@ else
                 @foreach (var p in _projects)
                 {
                     <tr>
-                        <td class="name">@p.Name</td>
-                        <td><span class="chip">@p.Abbreviation</span></td>
-                        <td class="cust">@p.Customer</td>
+                        <td class="name" data-label="Názov">@p.Name</td>
+                        <td data-label="Skratka"><span class="chip">@p.Abbreviation</span></td>
+                        <td class="cust" data-label="Zákazník">@p.Customer</td>
                         <td class="td-actions">
                             <div class="row-actions">
                                 <button class="btn btn-ghost btn-sm" @onclick="@(() => OpenEditor(p))">Upraviť</button>
