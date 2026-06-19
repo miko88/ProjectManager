@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<projects>
+   <project id="prj1">
+      <name>Informačný systém firmy ABC</name>
+      <abbreviation>IS-ABC</abbreviation>
+      <customer>ABC, s. r. o.</customer>
+   </project>
+   <project id="prj2">
+      <name>Importný modul ISIS</name>
+      <abbreviation>Import-ISIS</abbreviation>
+      <customer>Homer Simpson</customer>
+   </project>
+   <project id="prj3">
+      <name>Portácia IS-VAK na Oracle</name>
+      <abbreviation>OracleVAK</abbreviation>
+      <customer>VAK, š. p.</customer>
+   </project>
+   <project id="prj4">
+      <name>Elektronický obchod pre Telecom</name>
+      <abbreviation>EComTelecom</abbreviation>
+      <customer>Český Telecom, a. s.</customer>
+   </project>
+   <project id="prj5">
+      <name>Rozpoznávanie čiarového kódu pre Delvitu</name>
+      <abbreviation>CK-Delvita</abbreviation>
+      <customer>Delvita, a. s.</customer>
+   </project>
+</projects>

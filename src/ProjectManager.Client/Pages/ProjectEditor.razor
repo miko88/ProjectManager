@@ -1,0 +1,52 @@
+@using ProjectManager.Client.Services
+@using ProjectManager.Contracts
+@inject ProjectApiClient Api
+
+<div class="editor">
+    <h3>@(IsEdit ? "Upraviť projekt" : "Nový projekt")</h3>
+    <EditForm Model="@_model" OnValidSubmit="Save">
+        <div><label>Názov</label><InputText @bind-Value="_model.Name" /></div>
+        <div><label>Skratka</label><InputText @bind-Value="_model.Abbreviation" /></div>
+        <div><label>Zákazník</label><InputText @bind-Value="_model.Customer" /></div>
+        <button type="submit">Uložiť</button>
+        <button type="button" @onclick="OnCancel">Zrušiť</button>
+        @if (_error is not null) { <p style="color:red">@_error</p> }
+    </EditForm>
+</div>
+
+@code {
+    [Parameter] public ProjectDto? Project { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private readonly Model _model = new();
+    private string? _error;
+    private bool IsEdit => Project is not null;
+
+    protected override void OnParametersSet()
+    {
+        _model.Name = Project?.Name ?? "";
+        _model.Abbreviation = Project?.Abbreviation ?? "";
+        _model.Customer = Project?.Customer ?? "";
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+        var res = IsEdit
+            ? await Api.UpdateAsync(Project!.Id, new UpdateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer))
+            : await Api.CreateAsync(new CreateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer));
+
+        if (res.IsSuccessStatusCode) { await OnSaved.InvokeAsync(); return; }
+        _error = res.StatusCode == System.Net.HttpStatusCode.Conflict
+            ? "Projekt s touto skratkou už existuje."
+            : "Uloženie zlyhalo. Skontrolujte vstupy.";
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = "";
+        public string Abbreviation { get; set; } = "";
+        public string Customer { get; set; } = "";
+    }
+}

@@ -1,0 +1,18 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using ProjectManager.Client.Auth
+@inject JwtAuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<main class="container">
+    <AuthorizeView>
+        <Authorized>
+            <nav><a href="/">Projekty</a> <button @onclick="Logout">Odhlásiť</button></nav>
+        </Authorized>
+    </AuthorizeView>
+    @Body
+</main>
+
+@code {
+    private void Logout() { AuthState.Clear(); Nav.NavigateTo("/login"); }
+}

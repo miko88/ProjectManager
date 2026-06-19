@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    environment:
+      - Storage__ProjectsFilePath=/data/projects.xml
+      - Auth__SigningKey=compose-signing-key-change-me-min-32-chars-12345
+      - Cors__ClientOrigin=http://localhost:8080
+    volumes:
+      - ../data:/data
+    ports:
+      # Published on 5186 to match the value already baked into
+      # src/ProjectManager.Client/wwwroot/appsettings.json (ApiBaseUrl). The
+      # browser resolves ApiBaseUrl against the HOST, so the published port
+      # must equal the client's configured port for one config value to work
+      # both in local `dotnet run` (Api listens on 5186, see launchSettings.json)
+      # and in docker compose. See README.md "Docker Compose" section.
+      - "5186:8080"
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/client.Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api

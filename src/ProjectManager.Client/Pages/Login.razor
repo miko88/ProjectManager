@@ -1,0 +1,48 @@
+@page "/login"
+@using ProjectManager.Client.Auth
+@using ProjectManager.Client.Services
+@using ProjectManager.Contracts
+@inject AuthApiClient AuthApi
+@inject JwtAuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<h1>Prihlásenie</h1>
+
+<EditForm Model="@_model" OnValidSubmit="Submit">
+    <DataAnnotationsValidator />
+    <div>
+        <label>Používateľ</label>
+        <InputText @bind-Value="_model.Username" />
+    </div>
+    <div>
+        <label>Heslo</label>
+        <InputText type="password" @bind-Value="_model.Password" />
+    </div>
+    <button type="submit" disabled="@_busy">Prihlásiť</button>
+    @if (_error is not null)
+    {
+        <p style="color:red">@_error</p>
+    }
+</EditForm>
+
+@code {
+    private readonly LoginModel _model = new();
+    private bool _busy;
+    private string? _error;
+
+    private async Task Submit()
+    {
+        _busy = true; _error = null;
+        var response = await AuthApi.LoginAsync(new LoginRequest(_model.Username, _model.Password));
+        _busy = false;
+        if (response is null) { _error = "Nesprávne meno alebo heslo."; return; }
+        AuthState.SetToken(response.Token);
+        Nav.NavigateTo("/");
+    }
+
+    private sealed class LoginModel
+    {
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}
