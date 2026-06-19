@@ -1,3 +1,4 @@
+@using System.ComponentModel.DataAnnotations
 @using ProjectManager.Client.Services
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
@@ -6,17 +7,21 @@
     <div class="modal" @onclick:stopPropagation="true">
         <h3>@(IsEdit ? "Upraviť projekt" : "Nový projekt")</h3>
         <EditForm Model="@_model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
             <div class="field">
                 <label>Názov</label>
                 <InputText class="input" @bind-Value="_model.Name" />
+                <ValidationMessage For="@(() => _model.Name)" />
             </div>
             <div class="field">
                 <label>Skratka</label>
                 <InputText class="input" @bind-Value="_model.Abbreviation" />
+                <ValidationMessage For="@(() => _model.Abbreviation)" />
             </div>
             <div class="field">
                 <label>Zákazník</label>
                 <InputText class="input" @bind-Value="_model.Customer" />
+                <ValidationMessage For="@(() => _model.Customer)" />
             </div>
 
             @if (_error is not null)
@@ -61,10 +66,20 @@
             : "Uloženie zlyhalo. Skontrolujte vstupy.";
     }
 
+    // Mirrors the server-side FluentValidation rules (CreateProjectValidator/UpdateProjectValidator)
+    // so invalid input is caught before a round-trip; the API stays the source of truth.
     private sealed class Model
     {
+        [Required(ErrorMessage = "Názov je povinný.")]
+        [StringLength(200, ErrorMessage = "Názov môže mať najviac 200 znakov.")]
         public string Name { get; set; } = "";
+
+        [Required(ErrorMessage = "Skratka je povinná.")]
+        [StringLength(50, ErrorMessage = "Skratka môže mať najviac 50 znakov.")]
         public string Abbreviation { get; set; } = "";
+
+        [Required(ErrorMessage = "Zákazník je povinný.")]
+        [StringLength(200, ErrorMessage = "Zákazník môže mať najviac 200 znakov.")]
         public string Customer { get; set; } = "";
     }
 }

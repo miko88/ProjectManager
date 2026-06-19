@@ -3,6 +3,7 @@
 @using ProjectManager.Client.Services
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
+@inject IJSRuntime JS
 
 <div class="page-head reveal">
     <div class="title">
@@ -54,7 +55,7 @@ else
                         <td class="td-actions">
                             <div class="row-actions">
                                 <button class="btn btn-ghost btn-sm" @onclick="@(() => OpenEditor(p))">Upraviť</button>
-                                <button class="btn btn-danger-ghost btn-sm" @onclick="@(() => Delete(p.Id))">Zmazať</button>
+                                <button class="btn btn-danger-ghost btn-sm" @onclick="@(() => Delete(p))">Zmazať</button>
                             </div>
                         </td>
                     </tr>
@@ -104,10 +105,15 @@ else
 
     private async Task OnSaved() { _editing = false; await Load(); }
 
-    private async Task Delete(string id)
+    private async Task Delete(ProjectDto project)
     {
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", $"Naozaj zmazať projekt „{project.Name}\"?");
+        if (!confirmed)
+            return;
+
         _error = null;
-        var res = await Api.DeleteAsync(id);
+        var res = await Api.DeleteAsync(project.Id);
         if (res.IsSuccessStatusCode)
             await Load();
         else
