@@ -19,18 +19,16 @@ public sealed class CreateProjectHandler(
             return Result<Project>.Invalid(validation.ToErrorDictionary());
         }
 
-        var existing = await repository.GetAllAsync(ct);
-        if (existing.Any(p => string.Equals(p.Abbreviation, command.Abbreviation.Trim(), StringComparison.OrdinalIgnoreCase)))
+        // The repository creates the project atomically — id generation and abbreviation
+        // uniqueness are enforced by the adapter and surfaced as Conflict on collision.
+        var result = await repository.CreateAsync(
+            new ProjectDraft(command.Name, command.Abbreviation, command.Customer), ct);
+
+        if (result.IsSuccess)
         {
-            return Result<Project>.Conflict(ResultMessages.DuplicateAbbreviation(command.Abbreviation));
+            logger.LogInformation("Project {ProjectId} created (abbreviation {Abbreviation})", result.Value!.Id, result.Value.Abbreviation);
         }
 
-        // Id generation + persistence happen atomically inside the repository's write lock,
-        // so concurrent creates can never collide on an id.
-        var project = await repository.AddAsync(
-            id => Project.Create(id, command.Name, command.Abbreviation, command.Customer), ct);
-
-        logger.LogInformation("Project {ProjectId} created (abbreviation {Abbreviation})", project.Id, project.Abbreviation);
-        return Result<Project>.Success(project);
+        return result;
     }
 }

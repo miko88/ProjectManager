@@ -1,7 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using ProjectManager.Domain;
+using ProjectManager.Application.Abstractions;
+using ProjectManager.Application.Common;
 using ProjectManager.Infrastructure.Storage;
 using Xunit;
 
@@ -52,19 +53,21 @@ public class XmlProjectRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Add_AssignsId_ThenGetById_RoundTrips()
+    public async Task Create_AssignsId_ThenGetById_RoundTrips()
     {
         var repo = Build();
-        var created = await repo.AddAsync(id => Project.Create(id, "New", "NEW", "Cust"));
+        var created = await repo.CreateAsync(new ProjectDraft("New", "NEW", "Cust"));
 
-        created.Id.Should().Be("prj1");
-        var loaded = await repo.GetByIdAsync(created.Id);
+        created.IsSuccess.Should().BeTrue();
+        created.Value!.Id.Should().Be("prj1");
+
+        var loaded = await repo.GetByIdAsync("prj1");
         loaded.Should().NotBeNull();
         loaded!.Name.Should().Be("New");
     }
 
     [Fact]
-    public async Task Add_AssignsNextIdAsMaxPlusOne()
+    public async Task Create_AssignsNextIdAsMaxPlusOne()
     {
         await SeedAsync("""
             <projects>
@@ -73,23 +76,80 @@ public class XmlProjectRepositoryTests : IDisposable
             </projects>
             """);
 
-        var created = await Build().AddAsync(id => Project.Create(id, "C", "CC", "Cust"));
-        created.Id.Should().Be("prj8");
+        var created = await Build().CreateAsync(new ProjectDraft("C", "CC", "Cust"));
+        created.Value!.Id.Should().Be("prj8");
     }
 
     [Fact]
-    public async Task ConcurrentAdds_AssignUniqueIds_AndDoNotCorruptFile()
+    public async Task Create_DuplicateAbbreviation_ReturnsConflict_AndDoesNotPersist()
+    {
+        var repo = Build();
+        await repo.CreateAsync(new ProjectDraft("A", "DUP", "C"));
+
+        var second = await repo.CreateAsync(new ProjectDraft("B", "dup", "C")); // case-insensitive
+
+        second.Status.Should().Be(ResultStatus.Conflict);
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task ConcurrentCreates_DifferentAbbreviations_AllSucceedWithUniqueIds()
     {
         var repo = Build();
 
-        var tasks = Enumerable.Range(0, 20).Select(i =>
-            repo.AddAsync(id => Project.Create(id, $"N{i}", $"AB{i}", "C")));
-        var created = await Task.WhenAll(tasks);
+        var tasks = Enumerable.Range(0, 20).Select(i => repo.CreateAsync(new ProjectDraft($"N{i}", $"AB{i}", "C")));
+        var results = await Task.WhenAll(tasks);
 
-        var all = await repo.GetAllAsync();
-        all.Should().HaveCount(20);
-        // Atomic id generation inside the write lock => no two concurrent creates collide.
-        created.Select(p => p.Id).Distinct().Should().HaveCount(20);
+        results.Should().OnlyContain(r => r.IsSuccess);
+        results.Select(r => r.Value!.Id).Distinct().Should().HaveCount(20);
+        (await repo.GetAllAsync()).Should().HaveCount(20);
+    }
+
+    [Fact]
+    public async Task ConcurrentCreates_SameAbbreviation_OnlyOneSucceeds()
+    {
+        var repo = Build();
+
+        var tasks = Enumerable.Range(0, 20).Select(_ => repo.CreateAsync(new ProjectDraft("N", "DUP", "C")));
+        var results = await Task.WhenAll(tasks);
+
+        // Atomic uniqueness under the write lock: exactly one create wins, the rest see the conflict.
+        results.Count(r => r.IsSuccess).Should().Be(1);
+        results.Count(r => r.Status == ResultStatus.Conflict).Should().Be(19);
+        (await repo.GetAllAsync()).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task Update_AppliesChange_WhenFound()
+    {
+        var repo = Build();
+        var created = await repo.CreateAsync(new ProjectDraft("Old", "OLD", "C"));
+        var id = created.Value!.Id;
+
+        var result = await repo.UpdateAsync(id, new ProjectDraft("New", "NEW", "C"));
+
+        result.IsSuccess.Should().BeTrue();
+        (await repo.GetByIdAsync(id))!.Name.Should().Be("New");
+    }
+
+    [Fact]
+    public async Task Update_ReturnsNotFound_WhenMissing()
+    {
+        var result = await Build().UpdateAsync("nope", new ProjectDraft("N", "N", "C"));
+        result.Status.Should().Be(ResultStatus.NotFound);
+    }
+
+    [Fact]
+    public async Task Update_DuplicateAbbreviation_ReturnsConflict_AndDoesNotPersist()
+    {
+        var repo = Build();
+        var a = await repo.CreateAsync(new ProjectDraft("A", "AAA", "C"));
+        await repo.CreateAsync(new ProjectDraft("B", "BBB", "C"));
+
+        var result = await repo.UpdateAsync(a.Value!.Id, new ProjectDraft("A", "BBB", "C")); // collides with B
+
+        result.Status.Should().Be(ResultStatus.Conflict);
+        (await repo.GetByIdAsync(a.Value.Id))!.Abbreviation.Should().Be("AAA"); // unchanged
     }
 
     public void Dispose()
