@@ -5,8 +5,15 @@ namespace ProjectManager.Client.Services;
 
 public sealed class ProjectApiClient(HttpClient http)
 {
-    public async Task<List<ProjectDto>> GetAllAsync() =>
-        await http.GetFromJsonAsync<List<ProjectDto>>("/api/projects") ?? new();
+    /// <summary>Returns the projects, or <c>null</c> if the request was not successful
+    /// (e.g. 401) so the caller can show a friendly message instead of throwing.</summary>
+    public async Task<List<ProjectDto>?> GetAllAsync()
+    {
+        using var response = await http.GetAsync("/api/projects");
+        if (!response.IsSuccessStatusCode)
+            return null;
+        return await response.Content.ReadFromJsonAsync<List<ProjectDto>>() ?? new();
+    }
 
     public async Task<HttpResponseMessage> CreateAsync(CreateProjectRequest req) =>
         await http.PostAsJsonAsync("/api/projects", req);

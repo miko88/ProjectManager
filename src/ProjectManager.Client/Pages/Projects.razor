@@ -52,8 +52,25 @@ else
 
     private async Task Load()
     {
-        _projects = await Api.GetAllAsync();
         _error = null;
+        try
+        {
+            var projects = await Api.GetAllAsync();
+            if (projects is null)
+            {
+                _error = "Projekty sa nepodarilo načítať (neautorizované alebo chyba servera).";
+                _projects = new();
+            }
+            else
+            {
+                _projects = projects;
+            }
+        }
+        catch
+        {
+            _error = "Nepodarilo sa spojiť so serverom.";
+            _projects = new();
+        }
     }
 
     private void OpenEditor(ProjectDto? p) { _selected = p; _editing = true; }

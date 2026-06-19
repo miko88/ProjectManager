@@ -4,21 +4,17 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace ProjectManager.Client.Auth;
 
-public sealed class JwtAuthenticationStateProvider : AuthenticationStateProvider
+public sealed class JwtAuthenticationStateProvider(TokenStore store) : AuthenticationStateProvider
 {
-    private string? _token;
-
-    public string? Token => _token;
-
     public void SetToken(string token)
     {
-        _token = token;
+        store.Token = token;
         NotifyAuthenticationStateChanged(Task.FromResult(BuildState()));
     }
 
     public void Clear()
     {
-        _token = null;
+        store.Token = null;
         NotifyAuthenticationStateChanged(Task.FromResult(BuildState()));
     }
 
@@ -26,10 +22,10 @@ public sealed class JwtAuthenticationStateProvider : AuthenticationStateProvider
 
     private AuthenticationState BuildState()
     {
-        if (string.IsNullOrEmpty(_token))
+        if (string.IsNullOrEmpty(store.Token))
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
 
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(_token);
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(store.Token);
         var identity = new ClaimsIdentity(jwt.Claims, authenticationType: "jwt");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
