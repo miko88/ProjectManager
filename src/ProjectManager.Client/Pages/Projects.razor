@@ -113,11 +113,18 @@ else
             return;
 
         _error = null;
-        var res = await Api.DeleteAsync(project.Id);
-        if (res.IsSuccessStatusCode)
-            await Load();
-        else
-            _error = "Zmazanie zlyhalo.";
+        try
+        {
+            var res = await Api.DeleteAsync(project.Id);
+            if (res.IsSuccessStatusCode)
+                await Load();
+            else
+                _error = "Zmazanie zlyhalo.";
+        }
+        catch
+        {
+            _error = "Nepodarilo sa spojiť so serverom.";
+        }
     }
 
     private static string Plural(int n) => n == 1 ? "záznam" : (n >= 2 && n <= 4 ? "záznamy" : "záznamov");

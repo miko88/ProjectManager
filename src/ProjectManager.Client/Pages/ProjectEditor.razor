@@ -1,4 +1,5 @@
 @using System.ComponentModel.DataAnnotations
+@using System.Net.Http.Json
 @using ProjectManager.Client.Services
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
@@ -56,15 +57,47 @@
     private async Task Save()
     {
         _error = null;
-        var res = IsEdit
-            ? await Api.UpdateAsync(Project!.Id, new UpdateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer))
-            : await Api.CreateAsync(new CreateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer));
+        try
+        {
+            var res = IsEdit
+                ? await Api.UpdateAsync(Project!.Id, new UpdateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer))
+                : await Api.CreateAsync(new CreateProjectRequest(_model.Name, _model.Abbreviation, _model.Customer));
 
-        if (res.IsSuccessStatusCode) { await OnSaved.InvokeAsync(); return; }
-        _error = res.StatusCode == System.Net.HttpStatusCode.Conflict
-            ? "Projekt s touto skratkou už existuje."
-            : "Uloženie zlyhalo. Skontrolujte vstupy.";
+            if (res.IsSuccessStatusCode) { await OnSaved.InvokeAsync(); return; }
+            _error = await DescribeErrorAsync(res);
+        }
+        catch
+        {
+            _error = "Nepodarilo sa spojiť so serverom.";
+        }
     }
+
+    // Turns a non-success response into a human message: a friendly text for a known conflict,
+    // otherwise the server's RFC 7807 ProblemDetails (validation errors / detail / title).
+    private static async Task<string> DescribeErrorAsync(HttpResponseMessage res)
+    {
+        if (res.StatusCode == System.Net.HttpStatusCode.Conflict)
+            return "Projekt s touto skratkou už existuje.";
+
+        try
+        {
+            var problem = await res.Content.ReadFromJsonAsync<ProblemResponse>();
+            if (problem?.Errors is { Count: > 0 })
+                return string.Join(" ", problem.Errors.SelectMany(e => e.Value));
+            if (!string.IsNullOrWhiteSpace(problem?.Detail))
+                return problem!.Detail!;
+            if (!string.IsNullOrWhiteSpace(problem?.Title))
+                return problem!.Title!;
+        }
+        catch
+        {
+            // Response body was not problem+json; fall back to a generic message.
+        }
+
+        return "Uloženie zlyhalo. Skontrolujte vstupy.";
+    }
+
+    private sealed record ProblemResponse(string? Title, string? Detail, Dictionary<string, string[]>? Errors);
 
     // Mirrors the server-side FluentValidation rules (CreateProjectValidator/UpdateProjectValidator)
     // so invalid input is caught before a round-trip; the API stays the source of truth.

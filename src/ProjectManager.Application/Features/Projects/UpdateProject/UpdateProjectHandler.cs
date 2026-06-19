@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 
@@ -6,7 +7,8 @@ namespace ProjectManager.Application.Features.Projects.UpdateProject;
 
 public sealed class UpdateProjectHandler(
     IProjectRepository repository,
-    IValidator<UpdateProjectCommand> validator)
+    IValidator<UpdateProjectCommand> validator,
+    ILogger<UpdateProjectHandler> logger)
 {
     public async Task<Result> HandleAsync(UpdateProjectCommand command, CancellationToken ct = default)
     {
@@ -26,6 +28,7 @@ public sealed class UpdateProjectHandler(
         project.Update(command.Name, command.Abbreviation, command.Customer);
         await repository.UpdateAsync(project, ct);
 
+        logger.LogInformation("Project {ProjectId} updated", project.Id);
         return Result.Success();
     }
 }

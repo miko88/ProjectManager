@@ -5,6 +5,8 @@ services:
       dockerfile: deploy/api.Dockerfile
     environment:
       - Storage__ProjectsFilePath=/data/projects.xml
+      # Throwaway DEMO signing key for local compose only. Replace with your own
+      # (env / secret manager) for any real deployment — never use this value in production.
       - Auth__SigningKey=compose-signing-key-change-me-min-32-chars-12345
       - Cors__ClientOrigin=http://localhost:8080
     volumes:

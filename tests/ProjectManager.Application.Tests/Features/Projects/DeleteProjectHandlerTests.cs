@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
@@ -10,6 +11,9 @@ namespace ProjectManager.Application.Tests.Features.Projects;
 
 public class DeleteProjectHandlerTests
 {
+    private static DeleteProjectHandler Build(IProjectRepository repo) =>
+        new(repo, NullLogger<DeleteProjectHandler>.Instance);
+
     [Fact]
     public async Task ExistingProject_IsDeleted()
     {
@@ -17,7 +21,7 @@ public class DeleteProjectHandlerTests
         repo.GetByIdAsync("prj1", Arg.Any<CancellationToken>())
             .Returns(Project.Create("prj1", "A", "A", "C"));
 
-        var result = await new DeleteProjectHandler(repo).HandleAsync("prj1");
+        var result = await Build(repo).HandleAsync("prj1");
 
         result.IsSuccess.Should().BeTrue();
         await repo.Received(1).DeleteAsync("prj1", Arg.Any<CancellationToken>());
@@ -29,7 +33,7 @@ public class DeleteProjectHandlerTests
         var repo = Substitute.For<IProjectRepository>();
         repo.GetByIdAsync("nope", Arg.Any<CancellationToken>()).Returns((Project?)null);
 
-        var result = await new DeleteProjectHandler(repo).HandleAsync("nope");
+        var result = await Build(repo).HandleAsync("nope");
 
         result.Status.Should().Be(ResultStatus.NotFound);
         await repo.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());

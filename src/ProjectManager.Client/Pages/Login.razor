@@ -52,11 +52,21 @@
     private async Task Submit()
     {
         _busy = true; _error = null;
-        var response = await AuthApi.LoginAsync(new LoginRequest(_model.Username, _model.Password));
-        _busy = false;
-        if (response is null) { _error = "Nesprávne meno alebo heslo."; return; }
-        AuthState.SetToken(response.Token);
-        Nav.NavigateTo("/");
+        try
+        {
+            var response = await AuthApi.LoginAsync(new LoginRequest(_model.Username, _model.Password));
+            if (response is null) { _error = "Nesprávne meno alebo heslo."; return; }
+            AuthState.SetToken(response.Token);
+            Nav.NavigateTo("/");
+        }
+        catch
+        {
+            _error = "Nepodarilo sa spojiť so serverom.";
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private sealed class LoginModel

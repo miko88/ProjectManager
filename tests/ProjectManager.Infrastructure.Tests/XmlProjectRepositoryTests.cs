@@ -52,18 +52,19 @@ public class XmlProjectRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Add_ThenGetById_RoundTrips()
+    public async Task Add_AssignsId_ThenGetById_RoundTrips()
     {
         var repo = Build();
-        await repo.AddAsync(Project.Create("prj9", "New", "NEW", "Cust"));
+        var created = await repo.AddAsync(id => Project.Create(id, "New", "NEW", "Cust"));
 
-        var loaded = await repo.GetByIdAsync("prj9");
+        created.Id.Should().Be("prj1");
+        var loaded = await repo.GetByIdAsync(created.Id);
         loaded.Should().NotBeNull();
         loaded!.Name.Should().Be("New");
     }
 
     [Fact]
-    public async Task NextId_IsMaxPlusOne()
+    public async Task Add_AssignsNextIdAsMaxPlusOne()
     {
         await SeedAsync("""
             <projects>
@@ -72,22 +73,23 @@ public class XmlProjectRepositoryTests : IDisposable
             </projects>
             """);
 
-        var next = await Build().NextIdAsync();
-        next.Should().Be("prj8");
+        var created = await Build().AddAsync(id => Project.Create(id, "C", "CC", "Cust"));
+        created.Id.Should().Be("prj8");
     }
 
     [Fact]
-    public async Task ConcurrentAdds_DoNotCorruptFile_AllPersist()
+    public async Task ConcurrentAdds_AssignUniqueIds_AndDoNotCorruptFile()
     {
         var repo = Build();
-        await repo.AddAsync(Project.Create("seed", "S", "S", "C"));
 
         var tasks = Enumerable.Range(0, 20).Select(i =>
-            repo.AddAsync(Project.Create($"p{i}", $"N{i}", $"AB{i}", "C")));
-        await Task.WhenAll(tasks);
+            repo.AddAsync(id => Project.Create(id, $"N{i}", $"AB{i}", "C")));
+        var created = await Task.WhenAll(tasks);
 
         var all = await repo.GetAllAsync();
-        all.Should().HaveCount(21);
+        all.Should().HaveCount(20);
+        // Atomic id generation inside the write lock => no two concurrent creates collide.
+        created.Select(p => p.Id).Distinct().Should().HaveCount(20);
     }
 
     public void Dispose()

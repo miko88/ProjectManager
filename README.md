@@ -20,6 +20,16 @@ Jednoduchá aplikácia na správu projektov firmy: prihlásenie, zoznam projekto
 - **.NET 10 SDK** (10.0.2xx alebo novší)
 - Voliteľne **Docker** (Docker Desktop / Engine 28+) pre beh cez kontajnery
 
+## Vývojové prostredie
+
+Riešenie je vyvíjané v **C# / .NET 10 SDK** a nie je viazané na jedno IDE — funguje s **Visual Studio 2022+**, **JetBrains Rider** aj **VS Code** (C# Dev Kit). Dôvody voľby:
+
+- **.NET 10 (LTS-trieda)** — moderný, dlhodobo podporovaný runtime; jeden jazyk (C#) pre backend aj frontend (Blazor), takže zdieľame DTO (`Contracts`) a typovú bezpečnosť cez celý stack.
+- **CLI-first** — celý build/test/run beží cez `dotnet` (`dotnet build`/`test`/`run`, `docker compose`), takže projekt je reprodukovateľný bez konkrétneho IDE a ľahko zapojiteľný do CI.
+- **Odporúčané IDE: Visual Studio 2022 / Rider** kvôli pohodlnej práci s viacprojektovým solution, debuggingu Blazor WASM a integrácii user-secrets; VS Code je plnohodnotná odľahčená alternatíva.
+
+Odôvodnenie výberu knižníc a frameworkov je v [design dokumente](docs/2026-06-18-sprava-projektov-design.md) (§12).
+
 ## Prihlasovacie údaje (demo)
 
 ```
@@ -27,7 +37,7 @@ používateľ: admin
 heslo:      Admin123!
 ```
 
-Toto je zdokumentovaný demo účet potrebný na spustenie. V `config.xml` je uložený len **PBKDF2 hash** hesla (nie plaintext). Podpisový kľúč JWT (`Auth:SigningKey`) je **secret** a nikdy nie je v repozitári — lokálne sa berie z user-secrets, v kontajneri z premennej prostredia.
+Toto je zdokumentovaný demo účet potrebný na spustenie. V `config.xml` je uložený len **PBKDF2 hash** hesla (nie plaintext). Podpisový kľúč JWT (`Auth:SigningKey`) je **secret**: pre lokálny beh sa berie z user-secrets a v repozitári nie je. Kvôli jednoduchému vyskúšaniu obsahuje `deploy/docker-compose.yml` **throwaway demo kľúč** — v reálnom nasadení ho nahraď vlastným (env premenná / secret manager) a demo hodnotu nikdy nepoužívaj v produkcii.
 
 ## Konfigurácia
 
