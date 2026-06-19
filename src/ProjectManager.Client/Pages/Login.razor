@@ -6,24 +6,40 @@
 @inject JwtAuthenticationStateProvider AuthState
 @inject NavigationManager Nav
 
-<h1>Prihlásenie</h1>
+<div class="login-shell">
+    <div class="login-card reveal">
+        <span class="eyebrow">Firemné projekty</span>
+        <h1>Správa projektov</h1>
+        <p class="login-sub">Prihláste sa pre prístup k zoznamu projektov.</p>
 
-<EditForm Model="@_model" OnValidSubmit="Submit">
-    <DataAnnotationsValidator />
-    <div>
-        <label>Používateľ</label>
-        <InputText @bind-Value="_model.Username" />
+        <EditForm Model="@_model" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <div class="field">
+                <label>Používateľ</label>
+                <InputText class="input" @bind-Value="_model.Username" autocomplete="username" />
+            </div>
+            <div class="field">
+                <label>Heslo</label>
+                <InputText class="input" type="password" @bind-Value="_model.Password" autocomplete="current-password" />
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-error">@_error</div>
+            }
+
+            <button class="btn btn-primary" type="submit" disabled="@_busy">
+                @if (_busy)
+                {
+                    <span class="spinner"></span>
+                }
+                Prihlásiť sa
+            </button>
+        </EditForm>
+
+        <div class="login-hint">demo &middot; admin / Admin123!</div>
     </div>
-    <div>
-        <label>Heslo</label>
-        <InputText type="password" @bind-Value="_model.Password" />
-    </div>
-    <button type="submit" disabled="@_busy">Prihlásiť</button>
-    @if (_error is not null)
-    {
-        <p style="color:red">@_error</p>
-    }
-</EditForm>
+</div>
 
 @code {
     private readonly LoginModel _model = new();

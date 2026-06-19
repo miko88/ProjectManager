@@ -4,15 +4,42 @@
 @inject JwtAuthenticationStateProvider AuthState
 @inject NavigationManager Nav
 
-<main class="container">
-    <AuthorizeView>
-        <Authorized>
-            <nav><a href="/">Projekty</a> <button @onclick="Logout">Odhlásiť</button></nav>
-        </Authorized>
-    </AuthorizeView>
-    @Body
-</main>
+<AuthorizeView>
+    <Authorized>
+        <div class="app">
+            <header class="app-header">
+                <a href="/" class="brand">
+                    <span class="dot"></span> Správa&nbsp;projektov <small>PM</small>
+                </a>
+                <div class="header-right">
+                    <span class="user-chip">
+                        <span class="avatar">@Initials(context)</span>
+                        <span class="hide-sm">@UserName(context)</span>
+                    </span>
+                    <button class="btn btn-ghost btn-sm" @onclick="Logout">Odhlásiť</button>
+                </div>
+            </header>
+            <main class="page-wrap">@Body</main>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @Body
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
-    private void Logout() { AuthState.Clear(); Nav.NavigateTo("/login"); }
+    private void Logout()
+    {
+        AuthState.Clear();
+        Nav.NavigateTo("/login");
+    }
+
+    private static string UserName(AuthenticationState ctx) =>
+        ctx.User.FindFirst("sub")?.Value ?? ctx.User.Identity?.Name ?? "admin";
+
+    private static string Initials(AuthenticationState ctx)
+    {
+        var name = UserName(ctx);
+        return string.IsNullOrEmpty(name) ? "?" : name[..1];
+    }
 }
