@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectManager.Application.Abstractions;
+using ProjectManager.Application.Common;
 using ProjectManager.Domain;
 
 namespace ProjectManager.Infrastructure.Storage;
@@ -54,16 +55,23 @@ public sealed class XmlProjectRepository : IProjectRepository
         return all.FirstOrDefault(p => p.Id == id);
     }
 
-    public async Task<Project> AddAsync(Func<string, Project> create, CancellationToken ct = default)
+    public async Task<Result<Project>> CreateAsync(ProjectDraft draft, CancellationToken ct = default)
     {
         await _writeLock.WaitAsync(ct);
         try
         {
             var list = (await GetAllAsync(ct)).ToList();
-            var project = create(NextId(list));   // id reserved + entity built under the lock
+
+            // Uniqueness check, id generation and the write all happen under the lock.
+            if (AbbreviationExists(list, draft.Abbreviation))
+            {
+                return Result<Project>.Conflict(ResultMessages.DuplicateAbbreviation(draft.Abbreviation));
+            }
+
+            var project = Project.Create(NextId(list), draft.Name, draft.Abbreviation, draft.Customer);
             list.Add(project);
             await SaveAtomicAsync(list, ct);
-            return project;
+            return Result<Project>.Success(project);
         }
         finally
         {
@@ -83,17 +91,36 @@ public sealed class XmlProjectRepository : IProjectRepository
         return $"prj{max + 1}";
     }
 
-    public Task UpdateAsync(Project project, CancellationToken ct = default) =>
-        MutateAsync(list =>
+    private static bool AbbreviationExists(IEnumerable<Project> projects, string abbreviation, string? excludingId = null) =>
+        projects.Any(p => p.Id != excludingId &&
+                          string.Equals(p.Abbreviation, abbreviation.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    public async Task<Result> UpdateAsync(string id, ProjectDraft draft, CancellationToken ct = default)
+    {
+        await _writeLock.WaitAsync(ct);
+        try
         {
-            var idx = list.FindIndex(p => p.Id == project.Id);
+            var list = (await GetAllAsync(ct)).ToList();
+            var idx = list.FindIndex(p => p.Id == id);
             if (idx < 0)
             {
-                throw new InvalidOperationException($"Project '{project.Id}' not found.");
+                return Result.NotFound(ResultMessages.ProjectNotFound(id));
             }
 
-            list[idx] = project;
-        }, ct);
+            if (AbbreviationExists(list, draft.Abbreviation, excludingId: id))
+            {
+                return Result.Conflict(ResultMessages.DuplicateAbbreviation(draft.Abbreviation));
+            }
+
+            list[idx].Update(draft.Name, draft.Abbreviation, draft.Customer);
+            await SaveAtomicAsync(list, ct);
+            return Result.Success();
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
 
     public Task DeleteAsync(string id, CancellationToken ct = default) =>
         MutateAsync(list => list.RemoveAll(p => p.Id == id), ct);

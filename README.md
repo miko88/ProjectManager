@@ -8,7 +8,7 @@ Jednoduchá aplikácia na správu projektov firmy: prihlásenie, zoznam projekto
 - **Úložisko:** XML súbory za `IProjectRepository` (pripravené na výmenu za DB/REST/Cloud)
 - **Autentifikácia:** self-issued JWT; heslo ako hash+salt v konfiguračnom XML
 - **Logovanie:** Serilog (štruktúrované, console + rolling file)
-- **Testy:** xUnit + FluentAssertions + NSubstitute + `WebApplicationFactory` (41 testov)
+- **Testy:** xUnit + FluentAssertions + NSubstitute + `WebApplicationFactory` (47 testov)
 
 ## Dokumentácia
 

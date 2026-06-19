@@ -4,7 +4,6 @@ using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Application.Features.Projects.UpdateProject;
-using ProjectManager.Domain;
 using Xunit;
 
 namespace ProjectManager.Application.Tests.Features.Projects;
@@ -15,37 +14,52 @@ public class UpdateProjectHandlerTests
         new(repo, new UpdateProjectValidator(), NullLogger<UpdateProjectHandler>.Instance);
 
     [Fact]
-    public async Task ExistingProject_IsUpdatedAndPersisted()
+    public async Task ValidCommand_DelegatesToRepository_AndSucceeds()
     {
         var repo = Substitute.For<IProjectRepository>();
-        repo.GetByIdAsync("prj1", Arg.Any<CancellationToken>())
-            .Returns(Project.Create("prj1", "Old", "OLD", "OldC"));
-        repo.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(new[] { Project.Create("prj1", "Old", "OLD", "OldC") });
+        repo.UpdateAsync("prj1", Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success());
 
         var result = await Build(repo).HandleAsync(new UpdateProjectCommand("prj1", "New", "NEW", "NewC"));
 
         result.IsSuccess.Should().BeTrue();
-        await repo.Received(1).UpdateAsync(Arg.Is<Project>(p => p.Name == "New"), Arg.Any<CancellationToken>());
+        await repo.Received(1).UpdateAsync("prj1",
+            Arg.Is<ProjectDraft>(d => d.Name == "New" && d.Abbreviation == "NEW" && d.Customer == "NewC"),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task MissingProject_ReturnsNotFound()
+    public async Task MissingProject_PropagatesNotFound()
     {
         var repo = Substitute.For<IProjectRepository>();
-        repo.GetByIdAsync("nope", Arg.Any<CancellationToken>()).Returns((Project?)null);
+        repo.UpdateAsync("nope", Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
+            .Returns(Result.NotFound("missing"));
 
         var result = await Build(repo).HandleAsync(new UpdateProjectCommand("nope", "New", "NEW", "NewC"));
 
         result.Status.Should().Be(ResultStatus.NotFound);
-        await repo.DidNotReceive().UpdateAsync(Arg.Any<ProjectManager.Domain.Project>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task BlankName_ReturnsInvalid()
+    public async Task DuplicateAbbreviation_PropagatesConflict()
     {
         var repo = Substitute.For<IProjectRepository>();
+        repo.UpdateAsync(Arg.Any<string>(), Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Conflict("duplicate"));
+
+        var result = await Build(repo).HandleAsync(new UpdateProjectCommand("prj1", "New", "DUP", "NewC"));
+
+        result.Status.Should().Be(ResultStatus.Conflict);
+    }
+
+    [Fact]
+    public async Task BlankName_ReturnsInvalid_AndDoesNotCallRepository()
+    {
+        var repo = Substitute.For<IProjectRepository>();
+
         var result = await Build(repo).HandleAsync(new UpdateProjectCommand("prj1", "", "NEW", "NewC"));
+
         result.Status.Should().Be(ResultStatus.Invalid);
+        await repo.DidNotReceive().UpdateAsync(Arg.Any<string>(), Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>());
     }
 }

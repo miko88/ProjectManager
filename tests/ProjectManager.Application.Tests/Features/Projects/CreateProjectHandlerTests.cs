@@ -15,19 +15,19 @@ public class CreateProjectHandlerTests
         new(repo, new CreateProjectValidator(), NullLogger<CreateProjectHandler>.Instance);
 
     [Fact]
-    public async Task ValidCommand_AddsProjectWithGeneratedId()
+    public async Task ValidCommand_DelegatesToRepository_AndReturnsCreated()
     {
         var repo = Substitute.For<IProjectRepository>();
-        repo.GetAllAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<Project>());
-        // The repository assigns the id atomically; emulate it by invoking the factory with "prj6".
-        repo.AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>())
-            .Returns(ci => ci.Arg<Func<string, Project>>().Invoke("prj6"));
+        repo.CreateAsync(Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
+            .Returns(Result<Project>.Success(Project.Create("prj6", "Name", "ABBR", "Cust")));
 
         var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be("prj6");
-        await repo.Received(1).AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
+        await repo.Received(1).CreateAsync(
+            Arg.Is<ProjectDraft>(d => d.Name == "Name" && d.Abbreviation == "ABBR" && d.Customer == "Cust"),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -39,19 +39,18 @@ public class CreateProjectHandlerTests
 
         result.Status.Should().Be(ResultStatus.Invalid);
         result.ValidationErrors.Should().ContainKey(nameof(CreateProjectCommand.Name));
-        await repo.DidNotReceive().AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().CreateAsync(Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task DuplicateAbbreviation_ReturnsConflict()
+    public async Task DuplicateAbbreviation_PropagatesConflictFromRepository()
     {
         var repo = Substitute.For<IProjectRepository>();
-        repo.GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(new[] { Project.Create("prj1", "X", "ABBR", "C") });
+        repo.CreateAsync(Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
+            .Returns(Result<Project>.Conflict("duplicate"));
 
         var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
 
         result.Status.Should().Be(ResultStatus.Conflict);
-        await repo.DidNotReceive().AddAsync(Arg.Any<Func<string, Project>>(), Arg.Any<CancellationToken>());
     }
 }

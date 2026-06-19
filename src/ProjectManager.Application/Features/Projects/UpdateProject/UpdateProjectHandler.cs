@@ -18,23 +18,16 @@ public sealed class UpdateProjectHandler(
             return Result.Invalid(validation.ToErrorDictionary());
         }
 
-        var project = await repository.GetByIdAsync(command.Id, ct);
-        if (project is null)
+        // The repository updates atomically — existence and abbreviation uniqueness are enforced
+        // by the adapter and surfaced as NotFound / Conflict.
+        var result = await repository.UpdateAsync(
+            command.Id, new ProjectDraft(command.Name, command.Abbreviation, command.Customer), ct);
+
+        if (result.IsSuccess)
         {
-            return Result.NotFound(ResultMessages.ProjectNotFound(command.Id));
+            logger.LogInformation("Project {ProjectId} updated", command.Id);
         }
 
-        var others = await repository.GetAllAsync(ct);
-        if (others.Any(p => p.Id != command.Id &&
-                            string.Equals(p.Abbreviation, command.Abbreviation.Trim(), StringComparison.OrdinalIgnoreCase)))
-        {
-            return Result.Conflict(ResultMessages.DuplicateAbbreviation(command.Abbreviation));
-        }
-
-        project.Update(command.Name, command.Abbreviation, command.Customer);
-        await repository.UpdateAsync(project, ct);
-
-        logger.LogInformation("Project {ProjectId} updated", project.Id);
-        return Result.Success();
+        return result;
     }
 }
