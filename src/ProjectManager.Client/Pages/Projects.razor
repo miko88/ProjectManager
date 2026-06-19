@@ -4,37 +4,64 @@
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
 
-<h1>Projekty</h1>
-<button @onclick="@(() => OpenEditor(null))">Nový projekt</button>
+<div class="page-head reveal">
+    <div class="title">
+        <span class="eyebrow">Firemné projekty</span>
+        <h1>Projekty</h1>
+        @if (_projects is not null)
+        {
+            <span class="count">@_projects.Count @(Plural(_projects.Count))</span>
+        }
+    </div>
+    <button class="btn btn-primary" @onclick="@(() => OpenEditor(null))">＋ Nový projekt</button>
+</div>
 
 @if (_error is not null)
 {
-    <p style="color:red">@_error</p>
+    <div class="alert alert-error">@_error</div>
 }
 
 @if (_projects is null)
 {
-    <p>Načítavam…</p>
+    <div class="panel">
+        <div class="muted-block"><span class="spinner"></span>Načítavam projekty…</div>
+    </div>
+}
+else if (_projects.Count == 0)
+{
+    <div class="panel reveal-2">
+        <div class="empty">
+            <h3>Zatiaľ žiadne projekty</h3>
+            <p>Vytvorte prvý projekt firmy.</p>
+            <button class="btn btn-primary" @onclick="@(() => OpenEditor(null))">＋ Nový projekt</button>
+        </div>
+    </div>
 }
 else
 {
-    <table>
-        <thead><tr><th>Názov</th><th>Skratka</th><th>Zákazník</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var p in _projects)
-        {
-            <tr>
-                <td>@p.Name</td>
-                <td>@p.Abbreviation</td>
-                <td>@p.Customer</td>
-                <td>
-                    <button @onclick="@(() => OpenEditor(p))">Upraviť</button>
-                    <button @onclick="@(() => Delete(p.Id))">Zmazať</button>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="panel reveal-2">
+        <table class="data-table">
+            <thead>
+                <tr><th>Názov</th><th>Skratka</th><th>Zákazník</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _projects)
+                {
+                    <tr>
+                        <td class="name" data-label="Názov">@p.Name</td>
+                        <td data-label="Skratka"><span class="chip">@p.Abbreviation</span></td>
+                        <td class="cust" data-label="Zákazník">@p.Customer</td>
+                        <td class="td-actions">
+                            <div class="row-actions">
+                                <button class="btn btn-ghost btn-sm" @onclick="@(() => OpenEditor(p))">Upraviť</button>
+                                <button class="btn btn-danger-ghost btn-sm" @onclick="@(() => Delete(p.Id))">Zmazať</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @if (_editing)
@@ -86,4 +113,6 @@ else
         else
             _error = "Zmazanie zlyhalo.";
     }
+
+    private static string Plural(int n) => n == 1 ? "záznam" : (n >= 2 && n <= 4 ? "záznamy" : "záznamov");
 }

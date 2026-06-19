@@ -2,16 +2,34 @@
 @using ProjectManager.Contracts
 @inject ProjectApiClient Api
 
-<div class="editor">
-    <h3>@(IsEdit ? "Upraviť projekt" : "Nový projekt")</h3>
-    <EditForm Model="@_model" OnValidSubmit="Save">
-        <div><label>Názov</label><InputText @bind-Value="_model.Name" /></div>
-        <div><label>Skratka</label><InputText @bind-Value="_model.Abbreviation" /></div>
-        <div><label>Zákazník</label><InputText @bind-Value="_model.Customer" /></div>
-        <button type="submit">Uložiť</button>
-        <button type="button" @onclick="OnCancel">Zrušiť</button>
-        @if (_error is not null) { <p style="color:red">@_error</p> }
-    </EditForm>
+<div class="modal-backdrop" @onclick="OnCancel">
+    <div class="modal" @onclick:stopPropagation="true">
+        <h3>@(IsEdit ? "Upraviť projekt" : "Nový projekt")</h3>
+        <EditForm Model="@_model" OnValidSubmit="Save">
+            <div class="field">
+                <label>Názov</label>
+                <InputText class="input" @bind-Value="_model.Name" />
+            </div>
+            <div class="field">
+                <label>Skratka</label>
+                <InputText class="input" @bind-Value="_model.Abbreviation" />
+            </div>
+            <div class="field">
+                <label>Zákazník</label>
+                <InputText class="input" @bind-Value="_model.Customer" />
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-error">@_error</div>
+            }
+
+            <div class="modal-actions">
+                <button class="btn btn-ghost" type="button" @onclick="OnCancel">Zrušiť</button>
+                <button class="btn btn-primary" type="submit">Uložiť</button>
+            </div>
+        </EditForm>
+    </div>
 </div>
 
 @code {
