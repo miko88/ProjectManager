@@ -1,6 +1,4 @@
 using FluentAssertions;
-using ProjectManager.Domain;
-using Xunit;
 
 namespace ProjectManager.Domain.Tests;
 

@@ -1,9 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Infrastructure.Auth;
-using Xunit;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ProjectManager.Infrastructure.Tests;
 

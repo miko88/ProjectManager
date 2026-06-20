@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using ProjectManager.Application.Common;
 
 namespace ProjectManager.Api.Common;

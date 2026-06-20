@@ -16,7 +16,7 @@ public class GetProjectHandlerTests
         repo.GetByIdAsync("prj1", Arg.Any<CancellationToken>())
             .Returns(Project.Create("prj1", "A", "AB", "C"));
 
-        var result = await new GetProjectHandler(repo).HandleAsync("prj1");
+        var result = await new GetProjectHandler(repo).HandleAsync("prj1", TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be("prj1");
@@ -28,7 +28,7 @@ public class GetProjectHandlerTests
         var repo = Substitute.For<IProjectRepository>();
         repo.GetByIdAsync("nope", Arg.Any<CancellationToken>()).Returns((Project?)null);
 
-        var result = await new GetProjectHandler(repo).HandleAsync("nope");
+        var result = await new GetProjectHandler(repo).HandleAsync("nope", TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(ResultStatus.NotFound);
     }

@@ -1,5 +1,4 @@
 using ProjectManager.Api.Common;
-using ProjectManager.Application.Common;
 using ProjectManager.Application.Features.Auth.Login;
 using ProjectManager.Contracts;
 

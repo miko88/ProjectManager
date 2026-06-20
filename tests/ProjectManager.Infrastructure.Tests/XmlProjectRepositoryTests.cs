@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Infrastructure.Storage;
-using Xunit;
 
 namespace ProjectManager.Infrastructure.Tests;
 
@@ -30,7 +29,7 @@ public class XmlProjectRepositoryTests : IDisposable
             </projects>
             """);
 
-        var all = await Build().GetAllAsync();
+        var all = await Build().GetAllAsync(TestContext.Current.CancellationToken);
 
         all.Should().HaveCount(1);
         all[0].Id.Should().Be("prj1");
@@ -40,7 +39,7 @@ public class XmlProjectRepositoryTests : IDisposable
     [Fact]
     public async Task MissingFile_ReturnsEmpty()
     {
-        var all = await Build().GetAllAsync();
+        var all = await Build().GetAllAsync(TestContext.Current.CancellationToken);
         all.Should().BeEmpty();
     }
 
@@ -56,12 +55,12 @@ public class XmlProjectRepositoryTests : IDisposable
     public async Task Create_AssignsId_ThenGetById_RoundTrips()
     {
         var repo = Build();
-        var created = await repo.CreateAsync(new ProjectDraft("New", "NEW", "Cust"));
+        var created = await repo.CreateAsync(new ProjectDraft("New", "NEW", "Cust"), TestContext.Current.CancellationToken);
 
         created.IsSuccess.Should().BeTrue();
         created.Value!.Id.Should().Be("prj1");
 
-        var loaded = await repo.GetByIdAsync("prj1");
+        var loaded = await repo.GetByIdAsync("prj1", TestContext.Current.CancellationToken);
         loaded.Should().NotBeNull();
         loaded!.Name.Should().Be("New");
     }
@@ -76,7 +75,7 @@ public class XmlProjectRepositoryTests : IDisposable
             </projects>
             """);
 
-        var created = await Build().CreateAsync(new ProjectDraft("C", "CC", "Cust"));
+        var created = await Build().CreateAsync(new ProjectDraft("C", "CC", "Cust"), TestContext.Current.CancellationToken);
         created.Value!.Id.Should().Be("prj8");
     }
 
@@ -84,12 +83,12 @@ public class XmlProjectRepositoryTests : IDisposable
     public async Task Create_DuplicateAbbreviation_ReturnsConflict_AndDoesNotPersist()
     {
         var repo = Build();
-        await repo.CreateAsync(new ProjectDraft("A", "DUP", "C"));
+        await repo.CreateAsync(new ProjectDraft("A", "DUP", "C"), TestContext.Current.CancellationToken);
 
-        var second = await repo.CreateAsync(new ProjectDraft("B", "dup", "C")); // case-insensitive
+        var second = await repo.CreateAsync(new ProjectDraft("B", "dup", "C"), TestContext.Current.CancellationToken); // case-insensitive
 
         second.Status.Should().Be(ResultStatus.Conflict);
-        (await repo.GetAllAsync()).Should().HaveCount(1);
+        (await repo.GetAllAsync(TestContext.Current.CancellationToken)).Should().HaveCount(1);
     }
 
     [Fact]
@@ -102,7 +101,7 @@ public class XmlProjectRepositoryTests : IDisposable
 
         results.Should().OnlyContain(r => r.IsSuccess);
         results.Select(r => r.Value!.Id).Distinct().Should().HaveCount(20);
-        (await repo.GetAllAsync()).Should().HaveCount(20);
+        (await repo.GetAllAsync(TestContext.Current.CancellationToken)).Should().HaveCount(20);
     }
 
     [Fact]
@@ -116,26 +115,26 @@ public class XmlProjectRepositoryTests : IDisposable
         // Atomic uniqueness under the write lock: exactly one create wins, the rest see the conflict.
         results.Count(r => r.IsSuccess).Should().Be(1);
         results.Count(r => r.Status == ResultStatus.Conflict).Should().Be(19);
-        (await repo.GetAllAsync()).Should().HaveCount(1);
+        (await repo.GetAllAsync(TestContext.Current.CancellationToken)).Should().HaveCount(1);
     }
 
     [Fact]
     public async Task Update_AppliesChange_WhenFound()
     {
         var repo = Build();
-        var created = await repo.CreateAsync(new ProjectDraft("Old", "OLD", "C"));
+        var created = await repo.CreateAsync(new ProjectDraft("Old", "OLD", "C"), TestContext.Current.CancellationToken);
         var id = created.Value!.Id;
 
-        var result = await repo.UpdateAsync(id, new ProjectDraft("New", "NEW", "C"));
+        var result = await repo.UpdateAsync(id, new ProjectDraft("New", "NEW", "C"), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
-        (await repo.GetByIdAsync(id))!.Name.Should().Be("New");
+        (await repo.GetByIdAsync(id, TestContext.Current.CancellationToken))!.Name.Should().Be("New");
     }
 
     [Fact]
     public async Task Update_ReturnsNotFound_WhenMissing()
     {
-        var result = await Build().UpdateAsync("nope", new ProjectDraft("N", "N", "C"));
+        var result = await Build().UpdateAsync("nope", new ProjectDraft("N", "N", "C"), TestContext.Current.CancellationToken);
         result.Status.Should().Be(ResultStatus.NotFound);
     }
 
@@ -143,13 +142,13 @@ public class XmlProjectRepositoryTests : IDisposable
     public async Task Update_DuplicateAbbreviation_ReturnsConflict_AndDoesNotPersist()
     {
         var repo = Build();
-        var a = await repo.CreateAsync(new ProjectDraft("A", "AAA", "C"));
-        await repo.CreateAsync(new ProjectDraft("B", "BBB", "C"));
+        var a = await repo.CreateAsync(new ProjectDraft("A", "AAA", "C"), TestContext.Current.CancellationToken);
+        await repo.CreateAsync(new ProjectDraft("B", "BBB", "C"), TestContext.Current.CancellationToken);
 
-        var result = await repo.UpdateAsync(a.Value!.Id, new ProjectDraft("A", "BBB", "C")); // collides with B
+        var result = await repo.UpdateAsync(a.Value!.Id, new ProjectDraft("A", "BBB", "C"), TestContext.Current.CancellationToken); // collides with B
 
         result.Status.Should().Be(ResultStatus.Conflict);
-        (await repo.GetByIdAsync(a.Value.Id))!.Abbreviation.Should().Be("AAA"); // unchanged
+        (await repo.GetByIdAsync(a.Value.Id, TestContext.Current.CancellationToken))!.Abbreviation.Should().Be("AAA"); // unchanged
     }
 
     public void Dispose()

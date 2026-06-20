@@ -1,9 +1,9 @@
-using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Infrastructure.Auth;
 using ProjectManager.Infrastructure.Storage;
+using System.Text;
 
 namespace ProjectManager.Infrastructure;
 

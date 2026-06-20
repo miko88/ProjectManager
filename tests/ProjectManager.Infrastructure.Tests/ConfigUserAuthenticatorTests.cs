@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using ProjectManager.Application.Common;
 using ProjectManager.Infrastructure.Auth;
-using Xunit;
 
 namespace ProjectManager.Infrastructure.Tests;
 
@@ -21,7 +20,7 @@ public class ConfigUserAuthenticatorTests
     public async Task CorrectCredentials_ReturnsSuccess()
     {
         var (auth, password) = Build();
-        var result = await auth.AuthenticateAsync("admin", password);
+        var result = await auth.AuthenticateAsync("admin", password, TestContext.Current.CancellationToken);
         result.IsSuccess.Should().BeTrue();
         result.Value!.Username.Should().Be("admin");
     }
@@ -30,7 +29,7 @@ public class ConfigUserAuthenticatorTests
     public async Task WrongPassword_ReturnsUnauthorized()
     {
         var (auth, _) = Build();
-        var result = await auth.AuthenticateAsync("admin", "wrong");
+        var result = await auth.AuthenticateAsync("admin", "wrong", TestContext.Current.CancellationToken);
         result.Status.Should().Be(ResultStatus.Unauthorized);
     }
 
@@ -38,7 +37,7 @@ public class ConfigUserAuthenticatorTests
     public async Task UnknownUser_ReturnsUnauthorized()
     {
         var (auth, password) = Build();
-        var result = await auth.AuthenticateAsync("intruder", password);
+        var result = await auth.AuthenticateAsync("intruder", password, TestContext.Current.CancellationToken);
         result.Status.Should().Be(ResultStatus.Unauthorized);
     }
 }
