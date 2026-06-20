@@ -10,6 +10,18 @@
 
 ---
 
+## Odchýlky finálnej implementácie od tohto plánu
+
+Tento plán je pôvodný task-by-task postup. Implementácia sa počas review/PR (#3, #5) na pár miestach vedome posunula — kódové bloky nižšie preto na týchto miestach **nezodpovedajú** aktuálnemu kódu. Smerodajný je vždy kód v `src/`:
+
+- **`IProjectRepository` — intent-based, atomický kontrakt.** Namiesto `AddAsync(Project)` / `UpdateAsync(Project)` / `NextIdAsync()` má finálny port `CreateAsync(ProjectDraft) → Result<Project>` a `UpdateAsync(string id, ProjectDraft) → Result`. Generovanie `id` aj kontrola unikátnosti skratky sa presunuli z handlerov **do adaptéra** (`XmlProjectRepository` pod write-lockom), takže sú atomické. Týka sa to Task 2.2/2.4/2.5/3.1.
+- **`GetProject` use-case.** Pribudol `GetProjectHandler` a `GET /api/projects/{id}` je naň napojený (v pláne nebol samostatný handler pre detail).
+- **Formát solution:** `ProjectManager.slnx` (nový XML formát), nie `ProjectManager.sln`.
+- **`Microsoft.Extensions.Configuration.Xml`:** `AddXmlFile` sa používa, ale **bez samostatného NuGet balíka** (je súčasťou shared frameworku) — explicitný `PackageReference` bol odstránený (NU1510).
+- **Kódovanie úložiska `windows-1250` (podľa zadania).** `XmlProjectRepository` číta aj **zapisuje** v `windows-1250` (deklarácia aj bajty, bez BOM) — nie v `utf-8`, ako ukazujú kódové bloky nižšie (§0.4/§3.1). Legacy code page si na .NET vyžaduje jednorazovú registráciu `CodePagesEncodingProvider` (statický konštruktor repozitára); `CodePagesEncodingProvider` je v shared frameworku, bez NuGet balíka.
+
+---
+
 ## File Structure
 
 ```
