@@ -1,28 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="windows-1250"?>
 <projects>
-   <project id="prj1">
-      <name>Informaƒçn√Ω syst√©m firmy ABC</name>
-      <abbreviation>IS-ABC</abbreviation>
-      <customer>ABC, s. r. o.</customer>
-   </project>
-   <project id="prj2">
-      <name>Importn√Ω modul ISIS</name>
-      <abbreviation>Import-ISIS</abbreviation>
-      <customer>Homer Simpson</customer>
-   </project>
-   <project id="prj3">
-      <name>Port√°cia IS-VAK na Oracle</name>
-      <abbreviation>OracleVAK</abbreviation>
-      <customer>VAK, s. p.</customer>
-   </project>
-   <project id="prj4">
-      <name>Elektronick√Ω obchod pre Telecom</name>
-      <abbreviation>EComTelecom</abbreviation>
-      <customer>ƒåesk√Ω Telecom, a. s.</customer>
-   </project>
-   <project id="prj5">
-      <name>Rozpozn√°vanie ƒçiarov√©ho k√≥du pre Delvitu</name>
-      <abbreviation>CK-Delvita</abbreviation>
-      <customer>Delvita, a. s.</customer>
-   </project>
+  <project id="prj1">
+    <name>InformaËn˝ systÈm firmy ABC</name>
+    <abbreviation>IS-ABC</abbreviation>
+    <customer>ABC, s. r. o.</customer>
+  </project>
+  <project id="prj2">
+    <name>Importn˝ modul ISIS</name>
+    <abbreviation>Import-ISIS</abbreviation>
+    <customer>Homer Simpson</customer>
+  </project>
+  <project id="prj3">
+    <name>Port·cia IS-VAK na Oracle</name>
+    <abbreviation>OracleVAK</abbreviation>
+    <customer>VAK, s. p.</customer>
+  </project>
+  <project id="prj4">
+    <name>Elektronick˝ obchod pre Telecom</name>
+    <abbreviation>EComTelecom</abbreviation>
+    <customer>»esk˝ Telecom, a. s.</customer>
+  </project>
+  <project id="prj5">
+    <name>Rozpozn·vanie ËiarovÈho kÛdu pre Delvitu</name>
+    <abbreviation>CK-Delvita</abbreviation>
+    <customer>Delvita, a. s.</customer>
+  </project>
 </projects>

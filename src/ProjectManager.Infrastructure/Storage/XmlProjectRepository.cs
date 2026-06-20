@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Domain;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -16,6 +17,17 @@ namespace ProjectManager.Infrastructure.Storage;
 /// </summary>
 public sealed class XmlProjectRepository(IOptions<StorageOptions> options, ILogger<XmlProjectRepository> logger) : IProjectRepository
 {
+    // The assignment's projects.xml is declared as windows-1250; we read and write that code
+    // page so the store stays faithful to the brief. On .NET the legacy code pages are not
+    // available until the provider is registered (done once in the static constructor).
+    private static readonly Encoding Windows1250;
+
+    static XmlProjectRepository()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        Windows1250 = Encoding.GetEncoding("windows-1250");
+    }
+
     private readonly string _path = options.Value.ProjectsFilePath;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
@@ -136,7 +148,7 @@ public sealed class XmlProjectRepository(IOptions<StorageOptions> options, ILogg
     private async Task SaveAtomicAsync(IReadOnlyList<Project> projects, CancellationToken ct)
     {
         var doc = new XDocument(
-            new XDeclaration("1.0", "utf-8", null),
+            new XDeclaration("1.0", "windows-1250", null),
             new XElement("projects",
                 projects.Select(p => new XElement("project",
                     new XAttribute("id", p.Id),
@@ -146,12 +158,22 @@ public sealed class XmlProjectRepository(IOptions<StorageOptions> options, ILogg
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_path))!);
 
+        // Write the declared windows-1250 code page (no BOM — windows-1250 has none), so the
+        // file round-trips byte-consistently with the seed and the declared encoding matches.
+        var settings = new XmlWriterSettings
+        {
+            Async = true,
+            Indent = true,
+            Encoding = Windows1250
+        };
+
         var tmp = _path + ".tmp";
         try
         {
             await using (var stream = File.Create(tmp))
+            await using (var writer = XmlWriter.Create(stream, settings))
             {
-                await doc.SaveAsync(stream, SaveOptions.None, ct);
+                await doc.SaveAsync(writer, ct);
             }
 
             // Atomic replace: the store is never observed half-written.
