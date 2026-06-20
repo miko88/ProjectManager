@@ -1,10 +1,10 @@
-using System.Xml;
-using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Domain;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace ProjectManager.Infrastructure.Storage;
 
@@ -14,24 +14,17 @@ namespace ProjectManager.Infrastructure.Storage;
 /// Writes are serialized via a semaphore and committed atomically (temp file + replace)
 /// so the store is never left half-written, even under concurrency.
 /// </summary>
-public sealed class XmlProjectRepository : IProjectRepository
+public sealed class XmlProjectRepository(IOptions<StorageOptions> options, ILogger<XmlProjectRepository> logger) : IProjectRepository
 {
-    private readonly string _path;
-    private readonly ILogger<XmlProjectRepository> _logger;
+    private readonly string _path = options.Value.ProjectsFilePath;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
-
-    public XmlProjectRepository(IOptions<StorageOptions> options, ILogger<XmlProjectRepository> logger)
-    {
-        _path = options.Value.ProjectsFilePath;
-        _logger = logger;
-    }
 
     public async Task<IReadOnlyList<Project>> GetAllAsync(CancellationToken ct = default)
     {
         if (!File.Exists(_path))
         {
-            _logger.LogWarning("Projects file {Path} does not exist; returning empty list.", _path);
-            return Array.Empty<Project>();
+            logger.LogWarning("Projects file {Path} does not exist; returning empty list.", _path);
+            return [];
         }
 
         XDocument doc;
@@ -42,11 +35,11 @@ public sealed class XmlProjectRepository : IProjectRepository
         }
         catch (XmlException ex)
         {
-            _logger.LogError(ex, "Projects file {Path} is not valid XML.", _path);
+            logger.LogError(ex, "Projects file {Path} is not valid XML.", _path);
             throw new InvalidDataException($"Projects file '{_path}' is corrupt.", ex);
         }
 
-        return doc.Root?.Elements("project").Select(ToProject).ToList() ?? new List<Project>();
+        return doc.Root?.Elements("project").Select(ToProject).ToList() ?? [];
     }
 
     public async Task<Project?> GetByIdAsync(string id, CancellationToken ct = default)

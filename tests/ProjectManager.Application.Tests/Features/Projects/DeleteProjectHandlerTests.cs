@@ -5,7 +5,6 @@ using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Application.Features.Projects.DeleteProject;
 using ProjectManager.Domain;
-using Xunit;
 
 namespace ProjectManager.Application.Tests.Features.Projects;
 
@@ -21,7 +20,7 @@ public class DeleteProjectHandlerTests
         repo.GetByIdAsync("prj1", Arg.Any<CancellationToken>())
             .Returns(Project.Create("prj1", "A", "A", "C"));
 
-        var result = await Build(repo).HandleAsync("prj1");
+        var result = await Build(repo).HandleAsync("prj1", TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         await repo.Received(1).DeleteAsync("prj1", Arg.Any<CancellationToken>());
@@ -33,7 +32,7 @@ public class DeleteProjectHandlerTests
         var repo = Substitute.For<IProjectRepository>();
         repo.GetByIdAsync("nope", Arg.Any<CancellationToken>()).Returns((Project?)null);
 
-        var result = await Build(repo).HandleAsync("nope");
+        var result = await Build(repo).HandleAsync("nope", TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(ResultStatus.NotFound);
         await repo.DidNotReceive().DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());

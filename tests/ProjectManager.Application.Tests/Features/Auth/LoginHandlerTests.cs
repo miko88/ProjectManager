@@ -4,7 +4,6 @@ using NSubstitute;
 using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Application.Features.Auth.Login;
-using Xunit;
 
 namespace ProjectManager.Application.Tests.Features.Auth;
 

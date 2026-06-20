@@ -1,6 +1,5 @@
 using FluentAssertions;
 using ProjectManager.Application.Common;
-using Xunit;
 
 namespace ProjectManager.Application.Tests.Common;
 

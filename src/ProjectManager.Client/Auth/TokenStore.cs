@@ -2,7 +2,7 @@ namespace ProjectManager.Client.Auth;
 
 /// <summary>
 /// Holds the current JWT for the app session.
-/// Registered as a <b>singleton</b> on purpose: <see cref="System.Net.Http.IHttpClientFactory"/>
+/// Registered as a <b>singleton</b> on purpose: <see cref="IHttpClientFactory"/>
 /// resolves message handlers (and their dependencies) from a separate DI scope than the Blazor
 /// UI components. A scoped token holder would therefore give the <see cref="BearerTokenHandler"/>
 /// a different instance than the one the login page wrote to, and no token would be attached.

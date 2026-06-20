@@ -5,7 +5,6 @@ using ProjectManager.Application.Abstractions;
 using ProjectManager.Application.Common;
 using ProjectManager.Application.Features.Projects.CreateProject;
 using ProjectManager.Domain;
-using Xunit;
 
 namespace ProjectManager.Application.Tests.Features.Projects;
 
@@ -21,7 +20,7 @@ public class CreateProjectHandlerTests
         repo.CreateAsync(Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
             .Returns(Result<Project>.Success(Project.Create("prj6", "Name", "ABBR", "Cust")));
 
-        var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
+        var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be("prj6");
@@ -35,7 +34,7 @@ public class CreateProjectHandlerTests
     {
         var repo = Substitute.For<IProjectRepository>();
 
-        var result = await Build(repo).HandleAsync(new CreateProjectCommand("", "ABBR", "Cust"));
+        var result = await Build(repo).HandleAsync(new CreateProjectCommand("", "ABBR", "Cust"), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(ResultStatus.Invalid);
         result.ValidationErrors.Should().ContainKey(nameof(CreateProjectCommand.Name));
@@ -49,7 +48,7 @@ public class CreateProjectHandlerTests
         repo.CreateAsync(Arg.Any<ProjectDraft>(), Arg.Any<CancellationToken>())
             .Returns(Result<Project>.Conflict("duplicate"));
 
-        var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"));
+        var result = await Build(repo).HandleAsync(new CreateProjectCommand("Name", "ABBR", "Cust"), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(ResultStatus.Conflict);
     }
