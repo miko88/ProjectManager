@@ -228,7 +228,7 @@ Testovacia pyramída mapovaná na vrstvy; cieľ je **biznisovo kritické cesty**
 - **API URL pre klienta je konfigurovateľná** (nie hardcoded) → funguje lokálne aj v compose.
 - **README** popíše obe cesty + konfiguráciu.
 
-**.NET Aspire — fázovo (in scope, neskôr):** appka dáva zmysel aj bez neho; Aspire pridáme ako vrstvu navrchu pre orchestráciu + dashboard/observability (naviaže sa na Serilog → OTLP). Nie je v jadre 8h.
+**.NET Aspire — zvážené, vyradené:** appka dáva zmysel aj bez neho. Aspire bolo vyskúšané ako vrstva navrchu pre orchestráciu + dashboard/observability (naviaže sa na Serilog → OTLP), no orchestrácia Blazor WASM klienta je zatiaľ len v preview a vyžadovala by invazívne zmeny klienta — pri tomto rozsahu bez úmernej hodnoty, preto vyradené. Aplikácia naň ostáva pripravená (OTLP sink), ale nie je naň viazaná.
 
 ---
 
@@ -238,7 +238,7 @@ Testovacia pyramída mapovaná na vrstvy; cieľ je **biznisovo kritické cesty**
 |---|---|---|
 | ASP.NET Core (.NET 10) | Web API + hosting | LTS-trieda, moderný stack |
 | Blazor WebAssembly | Prezentačná vrstva | C# end-to-end, reálna SPA za HTTP API |
-| `Microsoft.Extensions.Configuration.Xml` | XML konfigurácia | Splní požiadavku „config v XML" vstavanými prostriedkami |
+| `Microsoft.Extensions.Configuration.Xml` (`AddXmlFile`) | XML konfigurácia | Splní požiadavku „config v XML" vstavanými prostriedkami; súčasť shared frameworku, bez samostatného NuGet balíka |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | JWT validácia | Štandardná, dobre auditovaná |
 | `Microsoft.AspNetCore.Identity.PasswordHasher` | Hashovanie hesla | Robustné PBKDF2, netreba vymýšľať vlastné |
 | **FluentValidation** | Validácia vstupu | De-facto štandard, čitateľné pravidlá |
@@ -255,7 +255,7 @@ Vlastný `Result<T>` — zámerne bez knižnice (triviálna vec, ukazuje pochope
 - **Výmena úložiska** XML → DB / REST / Cloud: nová implementácia `IProjectRepository` + riadok v DI. Doména a Application sa nedotknú.
 - **Reálny IdP / OAuth:** nová implementácia `IUserAuthenticator`; flow a validácia tokenu ostávajú.
 - **Multi-user + roly:** rozšírenie user-store a claims; `[Authorize(Roles=…)]`.
-- **.NET Aspire:** orchestrácia + observability dashboard (Serilog → OTLP).
+- **.NET Aspire:** orchestrácia + observability dashboard (Serilog → OTLP) — zvážené a zatiaľ vyradené (Blazor WASM orchestrácia len v preview, viď §11/§14); ostáva otvorené ako budúce rozšírenie.
 - **Caching** úložiska pri väčšom objeme dát.
 - **Refresh tokeny** pre dlhšie session bez re-loginu.
 
@@ -275,7 +275,7 @@ Pre hodnotiteľa — čo som **zámerne nespravil** a prečo:
 | **bUnit / UI testy** | Backend-focused pozícia; UI testy drahé a krehké; FE overené manuálne. |
 | **Testcontainers** | Žiadna DB. |
 | **CI/CD** | Mimo rozsahu zadania. |
-| **Aspire v jadre** | Pridané fázovo; appka musí fungovať aj bez neho. |
+| **Aspire (akákoľvek vrstva)** | Vyskúšané a vyradené: orchestrácia Blazor WASM klienta je len v preview a vyžaduje invazívne zmeny klienta; appka musí fungovať aj bez neho. |
 | **Plná Clean ceremónia** (mapper-rozhrania pre každý typ, DTO na každej hranici) | Pri jednom agregáte over-engineering; ponechané len hranice, ktoré si zaslúžia existenciu. |
 
 ---

@@ -22,7 +22,8 @@ public class LoginHandlerTests
         tokens.CreateToken(Arg.Any<AuthenticatedUser>())
             .Returns(new TokenResult("jwt-123", DateTimeOffset.UtcNow.AddHours(1)));
 
-        var result = await Build(auth, tokens).HandleAsync(new LoginCommand("admin", "pw"));
+        var result = await Build(auth, tokens).HandleAsync(
+            new LoginCommand("admin", "pw"), TestContext.Current.CancellationToken);
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Token.Should().Be("jwt-123");
@@ -36,7 +37,8 @@ public class LoginHandlerTests
             .Returns(Result<AuthenticatedUser>.Unauthorized("bad"));
         var tokens = Substitute.For<ITokenService>();
 
-        var result = await Build(auth, tokens).HandleAsync(new LoginCommand("admin", "wrong"));
+        var result = await Build(auth, tokens).HandleAsync(
+            new LoginCommand("admin", "wrong"), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(ResultStatus.Unauthorized);
         tokens.DidNotReceive().CreateToken(Arg.Any<AuthenticatedUser>());
@@ -46,7 +48,7 @@ public class LoginHandlerTests
     public async Task BlankUsername_ReturnsInvalid()
     {
         var result = await Build(Substitute.For<IUserAuthenticator>(), Substitute.For<ITokenService>())
-            .HandleAsync(new LoginCommand("", "pw"));
+            .HandleAsync(new LoginCommand("", "pw"), TestContext.Current.CancellationToken);
         result.Status.Should().Be(ResultStatus.Invalid);
     }
 }
