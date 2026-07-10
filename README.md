@@ -14,6 +14,7 @@ Jednoduchá aplikácia na správu projektov firmy: prihlásenie, zoznam projekto
 
 - [Design dokument](docs/2026-06-18-sprava-projektov-design.md) — architektúra, rozhodnutia a ich odôvodnenie.
 - [Implementačný plán](docs/2026-06-18-sprava-projektov-implementation-plan.md) — task-by-task postup s kódom.
+- [Architektúra – diagramy](docs/2026-07-05-architektura-diagramy.md) — vrstvy, závislosti a runtime tok (Mermaid).
 
 ## Predpoklady
 
